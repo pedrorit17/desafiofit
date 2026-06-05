@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Ranking — Desafio Fit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Ranking Geral</h2>
+    <div class="stat-destaque">
+        <span class="label">Total de cardio acumulado</span>
+        <span class="valor">{{ total_cardio_geral }} min</span>
+    </div>
+</div>
+
+{% if ranking %}
+<table class="tabela-ranking">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Competidor</th>
+            <th>Categoria</th>
+            <th>Dias</th>
+            <th>Cardio (min)</th>
+            <th>Pontos</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for i, c in ranking | enumerate(1) %}
+        <tr class="{{ 'top1' if i == 1 else 'top2' if i == 2 else 'top3' if i == 3 else '' }}">
+            <td class="pos">
+                {% if i == 1 %}🥇
+                {% elif i == 2 %}🥈
+                {% elif i == 3 %}🥉
+                {% else %}{{ i }}{% endif %}
+            </td>
+            <td><a href="{{ url_for('detalhe_competidor', competidor_id=c.id) }}">{{ c.nome }}</a></td>
+            <td>
+                <span class="badge badge-{{ c.categoria }}">
+                    {% if c.categoria == 'emagrecimento' %}Emagrecimento{% else %}Hipertrofia{% endif %}
+                </span>
+            </td>
+            <td>{{ c.dias_registrados }}/30</td>
+            <td>{{ c.total_cardio }}</td>
+            <td class="pontos">{{ c.total_pontos }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="vazio">Nenhum competidor cadastrado ainda. <a href="{{ url_for('novo_competidor') }}">Cadastrar primeiro competidor</a></p>
+{% endif %}
+{% endblock %}

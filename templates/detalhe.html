@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}{{ comp.nome }} — Desafio Fit{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{{ comp.nome }}</h2>
+    <span class="badge badge-{{ comp.categoria }}">
+        {{ 'Emagrecimento' if comp.categoria == 'emagrecimento' else 'Hipertrofia' }}
+    </span>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="label">Total de pontos</span>
+        <span class="valor grande">{{ total.total_pontos }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="label">Dias registrados</span>
+        <span class="valor">{{ total.dias_registrados }}/30</span>
+    </div>
+    <div class="stat-card">
+        <span class="label">Total de cardio</span>
+        <span class="valor">{{ total.total_cardio }} min</span>
+    </div>
+</div>
+
+{% if registros %}
+<table class="tabela-ranking">
+    <thead>
+        <tr>
+            <th>Dia</th>
+            <th>Musculação</th>
+            <th>Post Insta</th>
+            <th>Cardio (min)</th>
+            <th>At. Coletiva</th>
+            <th>Pontos</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in registros %}
+        <tr>
+            <td>Dia {{ '%02d' % r.dia }}</td>
+            <td>{{ '✅' if r.musculacao else '—' }}</td>
+            <td>{{ '✅' if r.post_insta else '—' }}</td>
+            <td>{{ r.cardio_minutos if r.cardio_minutos > 0 else '—' }}</td>
+            <td>{{ '✅' if r.atividade_coletiva else '—' }}</td>
+            <td class="pontos">{{ r.pontos }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="vazio">Nenhum dia registrado ainda.</p>
+{% endif %}
+
+<div style="margin-top:1.5rem">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Voltar ao ranking</a>
+    <a href="{{ url_for('registrar') }}" class="btn btn-primary">Registrar dia</a>
+</div>
+{% endblock %}

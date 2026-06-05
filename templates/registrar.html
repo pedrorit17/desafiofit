@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Registrar Dia — Desafio Fit{% endblock %}
+
+{% block content %}
+<div class="card form-card">
+    <h2>Registrar Atividades do Dia</h2>
+
+    {% if not competidores %}
+    <p class="vazio">Nenhum competidor cadastrado. <a href="{{ url_for('novo_competidor') }}">Cadastre um competidor primeiro.</a></p>
+    {% else %}
+    <form method="POST" id="form-registro">
+        <div class="campo">
+            <label for="competidor_id">Competidor</label>
+            <select id="competidor_id" name="competidor_id" required>
+                <option value="">Selecione...</option>
+                {% for c in competidores %}
+                <option value="{{ c.id }}" data-categoria="{{ c.categoria }}">
+                    {{ c.nome }} ({{ 'Emagrecimento' if c.categoria == 'emagrecimento' else 'Hipertrofia' }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="campo">
+            <label for="dia">Dia</label>
+            <select id="dia" name="dia" required>
+                <option value="">Selecione...</option>
+                {% for d in range(1, 31) %}
+                <option value="{{ d }}">Dia {{ '%02d' % d }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="campo-check">
+            <label class="check-label">
+                <input type="checkbox" name="musculacao" id="musculacao">
+                <span>Musculação <em>(+20 pts)</em></span>
+            </label>
+        </div>
+
+        <div class="campo-check">
+            <label class="check-label">
+                <input type="checkbox" name="post_insta" id="post_insta">
+                <span>Post no Instagram <em>(+2 pts)</em></span>
+            </label>
+        </div>
+
+        <div class="campo">
+            <label for="cardio_minutos">Cardio (minutos)</label>
+            <input type="number" id="cardio_minutos" name="cardio_minutos" min="0" max="120" value="0" placeholder="0">
+            <div id="tabela-cardio" class="tabela-referencia" style="display:none">
+                <strong id="categoria-label"></strong>
+                <ul id="lista-cardio"></ul>
+            </div>
+            <p class="pts-preview">Pontos de cardio: <strong id="pts-cardio">0</strong></p>
+        </div>
+
+        <div class="campo-check">
+            <label class="check-label">
+                <input type="checkbox" name="atividade_coletiva" id="atividade_coletiva">
+                <span>Atividade Coletiva <em>(+5 pts)</em></span>
+            </label>
+        </div>
+
+        <div class="pontos-total">
+            <span>Total estimado:</span>
+            <strong id="total-pts">0 pts</strong>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Registrar</button>
+    </form>
+    {% endif %}
+</div>
+
+<script>
+const faixas = {
+    emagrecimento: [
+        { min: 50, pts: 5, label: '50–60 min = 5 pts' },
+        { min: 40, pts: 4, label: '40 min = 4 pts' },
+        { min: 30, pts: 3, label: '30 min = 3 pts' },
+        { min: 20, pts: 2, label: '20 min = 2 pts' },
+    ],
+    hipertrofia: [
+        { min: 25, pts: 5, label: '25–30 min = 5 pts' },
+        { min: 20, pts: 4, label: '20 min = 4 pts' },
+        { min: 15, pts: 3, label: '15 min = 3 pts' },
+        { min: 10, pts: 2, label: '10 min = 2 pts' },
+    ]
+};
+
+function getCategoria() {
+    const sel = document.getElementById('competidor_id');
+    const opt = sel.options[sel.selectedIndex];
+    return opt ? opt.dataset.categoria : null;
+}
+
+function pontoCardio(min, cat) {
+    if (!cat) return 0;
+    for (const f of faixas[cat]) {
+        if (min >= f.min) return f.pts;
+    }
+    return 0;
+}
+
+function atualizar() {
+    const cat = getCategoria();
+    const min = parseInt(document.getElementById('cardio_minutos').value) || 0;
+    const musculacao = document.getElementById('musculacao').checked ? 20 : 0;
+    const insta = document.getElementById('post_insta').checked ? 2 : 0;
+    const coletiva = document.getElementById('atividade_coletiva').checked ? 5 : 0;
+    const cardio = pontoCardio(min, cat);
+
+    document.getElementById('pts-cardio').textContent = cardio;
+    document.getElementById('total-pts').textContent = (musculacao + insta + cardio + coletiva) + ' pts';
+
+    const tabelaDiv = document.getElementById('tabela-cardio');
+    if (cat) {
+        tabelaDiv.style.display = 'block';
+        document.getElementById('categoria-label').textContent =
+            cat === 'emagrecimento' ? 'Faixa Emagrecimento:' : 'Faixa Hipertrofia:';
+        const lista = document.getElementById('lista-cardio');
+        lista.innerHTML = '';
+        faixas[cat].forEach(f => {
+            const li = document.createElement('li');
+            li.textContent = f.label;
+            if (min >= f.min && pontoCardio(min, cat) === f.pts) li.classList.add('ativo');
+            lista.appendChild(li);
+        });
+    } else {
+        tabelaDiv.style.display = 'none';
+    }
+}
+
+document.getElementById('competidor_id')?.addEventListener('change', atualizar);
+document.getElementById('cardio_minutos')?.addEventListener('input', atualizar);
+['musculacao', 'post_insta', 'atividade_coletiva'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', atualizar);
+});
+</script>
+{% endblock %}
