@@ -118,42 +118,42 @@ def registrar():
         ).fetchall()
 
     if request.method == 'POST':
-        competidor_id = request.form.get('competidor_id')
         dia = request.form.get('dia', type=int)
-        musculacao = 1 if request.form.get('musculacao') else 0
-        post_insta = 1 if request.form.get('post_insta') else 0
-        cardio_minutos = request.form.get('cardio_minutos', 0, type=int)
-        atividade_coletiva = 1 if request.form.get('atividade_coletiva') else 0
+        if not dia:
+            flash('Selecione o dia antes de salvar.', 'erro')
+            return render_template('registrar.html', competidores=competidores, dia=None)
 
-        if not competidor_id or not dia:
-            flash('Competidor e dia são obrigatórios.', 'erro')
-            return render_template('registrar.html', competidores=competidores)
-
+        salvos = 0
+        erros = []
         with get_db() as conn:
-            comp = conn.execute(
-                'SELECT categoria FROM competidores WHERE id = ?', (competidor_id,)
-            ).fetchone()
+            for comp in competidores:
+                cid = str(comp['id'])
+                musculacao       = 1 if request.form.get(f'musculacao_{cid}') else 0
+                post_insta       = 1 if request.form.get(f'post_insta_{cid}') else 0
+                cardio_minutos   = request.form.get(f'cardio_{cid}', 0, type=int)
+                atividade_coletiva = 1 if request.form.get(f'coletiva_{cid}') else 0
 
-            if not comp:
-                flash('Competidor não encontrado.', 'erro')
-                return render_template('registrar.html', competidores=competidores)
+                pontos = calcular_pontos_total(
+                    musculacao, post_insta, cardio_minutos,
+                    atividade_coletiva, comp['categoria']
+                )
+                try:
+                    conn.execute('''
+                        INSERT INTO registros_diarios
+                            (competidor_id, dia, musculacao, post_insta, cardio_minutos, atividade_coletiva, pontos)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ''', (comp['id'], dia, musculacao, post_insta, cardio_minutos, atividade_coletiva, pontos))
+                    salvos += 1
+                except sqlite3.IntegrityError:
+                    erros.append(comp['nome'])
 
-            pontos = calcular_pontos_total(
-                musculacao, post_insta, cardio_minutos, atividade_coletiva, comp['categoria']
-            )
+        if erros:
+            flash(f'Dia {dia} já registrado para: {", ".join(erros)}.', 'erro')
+        if salvos:
+            flash(f'Dia {dia:02d} salvo para {salvos} competidor(es)!', 'sucesso')
+        return redirect(url_for('index'))
 
-            try:
-                conn.execute('''
-                    INSERT INTO registros_diarios
-                        (competidor_id, dia, musculacao, post_insta, cardio_minutos, atividade_coletiva, pontos)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (competidor_id, dia, musculacao, post_insta, cardio_minutos, atividade_coletiva, pontos))
-                flash(f'Dia {dia} registrado com sucesso! +{pontos} pontos.', 'sucesso')
-                return redirect(url_for('index'))
-            except sqlite3.IntegrityError:
-                flash(f'Este competidor já tem registro para o dia {dia}.', 'erro')
-
-    return render_template('registrar.html', competidores=competidores)
+    return render_template('registrar.html', competidores=competidores, dia=None)
 
 
 @app.route('/competidor/novo', methods=['GET', 'POST'])
