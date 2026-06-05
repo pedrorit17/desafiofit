@@ -26,13 +26,13 @@
         </tr>
     </thead>
     <tbody>
-        {% for i, c in ranking | enumerate(1) %}
-        <tr class="{{ 'top1' if i == 1 else 'top2' if i == 2 else 'top3' if i == 3 else '' }}">
+        {% for c in ranking %}
+        <tr class="{{ 'top1' if loop.index == 1 else 'top2' if loop.index == 2 else 'top3' if loop.index == 3 else '' }}">
             <td class="pos">
-                {% if i == 1 %}🥇
-                {% elif i == 2 %}🥈
-                {% elif i == 3 %}🥉
-                {% else %}{{ i }}{% endif %}
+                {% if loop.index == 1 %}🥇
+                {% elif loop.index == 2 %}🥈
+                {% elif loop.index == 3 %}🥉
+                {% else %}{{ loop.index }}{% endif %}
             </td>
             <td><a href="{{ url_for('detalhe_competidor', competidor_id=c.id) }}">{{ c.nome }}</a></td>
             <td>

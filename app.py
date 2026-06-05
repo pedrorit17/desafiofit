@@ -4,7 +4,6 @@ import os
 
 app = Flask(__name__)
 app.secret_key = 'desafiofit2024'
-app.jinja_env.globals['enumerate'] = enumerate
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'desafiofit.db')
 
