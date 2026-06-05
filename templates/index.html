@@ -11,15 +11,18 @@
 </div>
 
 {% if ranking %}
+<div class="tabela-wrap">
 <table class="tabela-ranking">
     <thead>
         <tr>
             <th>#</th>
             <th>Competidor</th>
             <th>Categoria</th>
-            <th>Dias</th>
-            <th>Cardio (min)</th>
-            <th>Pontos</th>
+            <th title="Critério principal">Pontos</th>
+            <th title="1º desempate: dias com atividade">Dias</th>
+            <th title="2º desempate: pontos só de cardio">Pts Cardio</th>
+            <th title="3º desempate: encontros coletivos">Coletivas</th>
+            <th title="4º desempate: posts no Instagram">Posts Insta</th>
         </tr>
     </thead>
     <tbody>
@@ -37,13 +40,20 @@
                     {% if c.categoria == 'emagrecimento' %}Emagrecimento{% else %}Hipertrofia{% endif %}
                 </span>
             </td>
-            <td>{{ c.dias_registrados }}/30</td>
-            <td>{{ c.total_cardio }}</td>
             <td class="pontos">{{ c.total_pontos }}</td>
+            <td>{{ c.dias_registrados }}/30</td>
+            <td>{{ c.pts_cardio }}</td>
+            <td>{{ c.total_coletivas }}</td>
+            <td>{{ c.total_posts }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+</div>
+
+<p class="legenda-desempate">
+    Critérios de desempate (em ordem): dias registrados → pontos de cardio → atividades coletivas → posts no Instagram → sorteio ao vivo.
+</p>
 {% else %}
 <p class="vazio">Nenhum competidor cadastrado ainda. <a href="{{ url_for('novo_competidor') }}">Cadastrar primeiro competidor</a></p>
 {% endif %}

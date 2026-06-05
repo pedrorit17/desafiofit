@@ -287,6 +287,15 @@ main {
 
 .vazio { color: var(--text-muted); font-style: italic; padding: 1rem 0; }
 
+.tabela-wrap { overflow-x: auto; }
+
+.legenda-desempate {
+    margin-top: .8rem;
+    font-size: .8rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
 @media (max-width: 600px) {
     .header-inner { flex-direction: column; gap: .6rem; }
     .radio-group { flex-direction: column; }

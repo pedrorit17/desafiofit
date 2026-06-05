@@ -9,9 +9,35 @@ app.jinja_env.globals['enumerate'] = enumerate
 DB_PATH = os.path.join(os.path.dirname(__file__), 'desafiofit.db')
 
 
+def calcular_pontos_cardio(minutos, categoria):
+    if not minutos:
+        return 0
+    if categoria == 'emagrecimento':
+        if minutos >= 50:
+            return 5
+        elif minutos >= 40:
+            return 4
+        elif minutos >= 30:
+            return 3
+        elif minutos >= 20:
+            return 2
+        return 0
+    else:  # hipertrofia
+        if minutos >= 25:
+            return 5
+        elif minutos >= 20:
+            return 4
+        elif minutos >= 15:
+            return 3
+        elif minutos >= 10:
+            return 2
+        return 0
+
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.create_function('calcular_pontos_cardio', 2, calcular_pontos_cardio)
     return conn
 
 
@@ -40,29 +66,6 @@ def init_db():
         ''')
 
 
-def calcular_pontos_cardio(minutos, categoria):
-    if categoria == 'emagrecimento':
-        if minutos >= 50:
-            return 5
-        elif minutos >= 40:
-            return 4
-        elif minutos >= 30:
-            return 3
-        elif minutos >= 20:
-            return 2
-        return 0
-    else:  # hipertrofia
-        if minutos >= 25:
-            return 5
-        elif minutos >= 20:
-            return 4
-        elif minutos >= 15:
-            return 3
-        elif minutos >= 10:
-            return 2
-        return 0
-
-
 def calcular_pontos_total(musculacao, post_insta, cardio_minutos, atividade_coletiva, categoria):
     pontos = 0
     if musculacao:
@@ -83,13 +86,22 @@ def index():
                 c.id,
                 c.nome,
                 c.categoria,
-                COALESCE(SUM(r.pontos), 0) AS total_pontos,
-                COUNT(r.id) AS dias_registrados,
-                COALESCE(SUM(r.cardio_minutos), 0) AS total_cardio
+                COALESCE(SUM(r.pontos), 0)                              AS total_pontos,
+                COUNT(r.id)                                              AS dias_registrados,
+                COALESCE(SUM(r.cardio_minutos), 0)                      AS total_cardio,
+                COALESCE(SUM(calcular_pontos_cardio(r.cardio_minutos, c.categoria)), 0) AS pts_cardio,
+                COALESCE(SUM(r.atividade_coletiva), 0)                  AS total_coletivas,
+                COALESCE(SUM(r.post_insta), 0)                          AS total_posts
             FROM competidores c
             LEFT JOIN registros_diarios r ON c.id = r.competidor_id
             GROUP BY c.id
-            ORDER BY total_pontos DESC, c.nome
+            ORDER BY
+                total_pontos      DESC,
+                dias_registrados  DESC,
+                pts_cardio        DESC,
+                total_coletivas   DESC,
+                total_posts       DESC,
+                c.nome
         ''').fetchall()
 
         total_cardio_geral = conn.execute(
