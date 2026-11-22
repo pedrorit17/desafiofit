@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin · Desafio Nanda Carvalho</title>
+  <style>
+    :root {
+      --laranja: #e07b39; --laranja-dark: #c4612a; --bg: #faf7f4;
+      --surface: #fff; --text: #1a1a1a; --muted: #777; --border: #e8e0d8;
+      --verde: #2d6a4f; --verde-bg: #d8f3dc; --erro: #c92a2a; --erro-bg: #ffe3e3;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ---- login ---- */
+    #login-screen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 1rem;
+    }
+    .login-card {
+      background: var(--surface); border-radius: 16px;
+      padding: 2.5rem 2rem; width: 100%; max-width: 380px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.1);
+    }
+    .login-card h1 { text-align: center; margin-bottom: 1.5rem; font-size: 1.3rem; }
+    .login-card h1 span { display: block; font-size: 2rem; }
+
+    /* ---- app ---- */
+    #app-screen { display: none; }
+
+    header {
+      background: linear-gradient(135deg, var(--laranja), var(--laranja-dark));
+      color: white; padding: .9rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    header h2 { font-size: 1.1rem; }
+    .btn-sair { background: rgba(255,255,255,.2); color: white; border: none; cursor: pointer;
+      padding: .4rem .9rem; border-radius: 6px; font-size: .88rem; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+    /* tabs */
+    .tabs { display: flex; gap: .5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); }
+    .tab {
+      padding: .6rem 1.2rem; cursor: pointer; border-radius: 8px 8px 0 0;
+      font-size: .9rem; font-weight: 600; border: 2px solid transparent; border-bottom: none;
+      background: none; color: var(--muted); transition: all .15s;
+    }
+    .tab.ativo { border-color: var(--border); border-bottom-color: var(--surface);
+      background: var(--surface); color: var(--laranja); }
+
+    .painel { display: none; }
+    .painel.ativo { display: block; }
+
+    /* alertas */
+    .alert { padding: .8rem 1.1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 500; }
+    .alert-ok  { background: var(--verde-bg); color: var(--verde); border-left: 4px solid var(--verde); }
+    .alert-err { background: var(--erro-bg);  color: var(--erro);  border-left: 4px solid var(--erro); }
+
+    /* campos */
+    .campo { margin-bottom: 1rem; display: flex; flex-direction: column; gap: .35rem; }
+    .campo label { font-weight: 600; font-size: .88rem; }
+    .campo input, .campo select {
+      padding: .6rem .9rem; border: 1.5px solid var(--border); border-radius: 8px; font-size: .95rem; background: white;
+    }
+    .campo input:focus, .campo select:focus { outline: none; border-color: var(--laranja); }
+
+    /* botões */
+    .btn {
+      display: inline-block; padding: .6rem 1.4rem; border-radius: 8px;
+      font-size: .95rem; font-weight: 600; cursor: pointer; border: none;
+      text-decoration: none; transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-laranja { background: var(--laranja); color: white; }
+    .btn-cinza   { background: var(--border);  color: var(--text); }
+
+    /* card form */
+    .card { background: var(--surface); border-radius: 12px;
+      padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+    .card h3 { margin-bottom: 1.2rem; font-size: 1.05rem; color: var(--laranja); }
+
+    /* lista participantes */
+    .lista-parts { display: flex; flex-direction: column; gap: .5rem; margin-top: 1rem; }
+    .part-item {
+      display: flex; align-items: center; gap: .8rem;
+      background: var(--bg); border-radius: 8px; padding: .6rem 1rem;
+      border: 1px solid var(--border);
+    }
+    .part-item .nome { font-weight: 600; flex: 1; }
+    .part-item .insta { font-size: .82rem; color: var(--muted); }
+    .btn-remover { background: var(--erro-bg); color: var(--erro); border: none; border-radius: 6px;
+      padding: .25rem .6rem; cursor: pointer; font-size: .82rem; }
+
+    /* ---- tabela registro ---- */
+    .config-dia {
+      display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap;
+      margin-bottom: 1.2rem;
+    }
+    .config-dia .campo { margin-bottom: 0; }
+
+    .tabela-wrap { overflow-x: auto; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    table.reg { width: 100%; border-collapse: collapse; background: var(--surface); }
+    table.reg thead tr { background: var(--text); }
+    table.reg th {
+      color: white; padding: .7rem .9rem; text-align: left;
+      font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap;
+    }
+    table.reg td {
+      padding: .65rem .9rem; border-bottom: 1px solid var(--border);
+      font-size: .9rem; vertical-align: middle;
+    }
+    table.reg tbody tr:last-child td { border-bottom: none; }
+    table.reg tbody tr:hover td { background: #fdf3ec; }
+    table.reg .centro { text-align: center; }
+
+    table.reg input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--laranja); cursor: pointer; }
+    table.reg input[type="number"] {
+      padding: .3rem .5rem; border: 1.5px solid var(--border); border-radius: 6px;
+      font-size: .9rem; text-align: center; width: 70px;
+    }
+    table.reg input[type="number"]:focus { outline: none; border-color: var(--laranja); }
+
+    .pts-prev { color: var(--laranja); font-weight: 700; font-size: 1rem; }
+    .ja-tem   { background: #fff4ec !important; }
+    .ja-tem td { opacity: .6; }
+    .badge-existente {
+      background: var(--laranja); color: white; font-size: .7rem; border-radius: 10px;
+      padding: .15rem .5rem; margin-left: .4rem; vertical-align: middle;
+    }
+
+    .registro-footer {
+      margin-top: 1.2rem; display: flex; justify-content: flex-end; gap: .8rem; align-items: center;
+    }
+    .info-semana { font-size: .82rem; color: var(--muted); }
+
+    /* spinner */
+    .spinner { display: inline-block; width: 16px; height: 16px;
+      border: 2px solid #fff; border-top-color: transparent;
+      border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: .4rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1><span>🏋️</span>Admin · Desafio</h1>
+    <div id="msg-login"></div>
+    <form id="form-login">
+      <div class="campo">
+        <label>E-mail</label>
+        <input type="email" id="login-email" required placeholder="admin@email.com">
+      </div>
+      <div class="campo">
+        <label>Senha</label>
+        <input type="password" id="login-senha" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn btn-laranja" style="width:100%;margin-top:.5rem" id="btn-entrar">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app-screen">
+  <header>
+    <h2>🏋️ Admin · Desafio Nanda Carvalho</h2>
+    <button class="btn-sair" id="btn-sair">Sair</button>
+  </header>
+
+  <main>
+    <div id="msg-global"></div>
+
+    <div class="tabs">
+      <button class="tab ativo" data-tab="registrar">Registrar Dia</button>
+      <button class="tab" data-tab="participantes">Participantes</button>
+    </div>
+
+    <!-- ===== PAINEL: REGISTRAR ===== -->
+    <div class="painel ativo" id="painel-registrar">
+      <div class="config-dia">
+        <div class="campo">
+          <label for="sel-data">Data</label>
+          <select id="sel-data"></select>
+        </div>
+        <div class="info-semana" id="info-semana"></div>
+      </div>
+
+      <div id="aviso-sem-parts" class="alert alert-err" style="display:none">
+        Nenhum participante cadastrado. Vá à aba <strong>Participantes</strong> para adicionar.
+      </div>
+
+      <div class="tabela-wrap">
+        <table class="reg" id="tabela-reg">
+          <thead>
+            <tr>
+              <th>Participante</th>
+              <th class="centro" title="+20 pts">Musculação</th>
+              <th class="centro">Cardio (min)</th>
+              <th class="centro" title="+5 pts">At. Coletiva</th>
+              <th class="centro" title="+2 pts">Post Insta</th>
+              <th class="centro">Pts</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-reg"></tbody>
+        </table>
+      </div>
+
+      <div class="registro-footer">
+        <span id="txt-checkins" class="info-semana"></span>
+        <button class="btn btn-laranja" id="btn-salvar">Salvar todos</button>
+      </div>
+    </div>
+
+    <!-- ===== PAINEL: PARTICIPANTES ===== -->
+    <div class="painel" id="painel-participantes">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; flex-wrap:wrap">
+
+        <div class="card">
+          <h3>Adicionar Participante</h3>
+          <form id="form-part">
+            <div class="campo">
+              <label>Nome completo</label>
+              <input type="text" id="part-nome" required placeholder="Ex.: Ana Paula Silva" autocomplete="off">
+            </div>
+            <div class="campo">
+              <label>Instagram (sem @)</label>
+              <input type="text" id="part-insta" placeholder="fulana.silva" autocomplete="off">
+            </div>
+            <div class="campo">
+              <label>Usuário no GymRats</label>
+              <input type="text" id="part-gymrats" placeholder="fulana123" autocomplete="off">
+            </div>
+            <button type="submit" class="btn btn-laranja">Cadastrar</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Participantes cadastrados</h3>
+          <div id="lista-participantes"><p style="color:var(--muted)">Carregando…</p></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp }
+  from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  getFirestore, collection, doc, addDoc, setDoc, deleteDoc,
+  onSnapshot, query, where, getDocs
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+// ---- CONFIG Firebase — substitua pelos dados do seu projeto ----
+const cfg = {
+  apiKey:            "COLE_AQUI",
+  authDomain:        "COLE_AQUI",
+  projectId:         "COLE_AQUI",
+  storageBucket:     "COLE_AQUI",
+  messagingSenderId: "COLE_AQUI",
+  appId:             "COLE_AQUI"
+};
+
+const app  = initializeApp(cfg);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+// ---- PONTUAÇÃO ----
+function ptsCardio(min) {
+  if (min >= 50) return 5; if (min >= 40) return 4;
+  if (min >= 30) return 3; if (min >= 20) return 2; return 0;
+}
+function calcPontos(r) {
+  return (r.musculacao?20:0) + ptsCardio(r.cardio_minutos||0) + (r.atividade_coletiva?5:0) + (r.post_insta?2:0);
+}
+
+// ---- DATAS DO DESAFIO ----
+const SEMANAS = [
+  {num:1,inicio:"2026-11-23",fim:"2026-11-29",max:6},
+  {num:2,inicio:"2026-11-30",fim:"2026-12-06",max:6},
+  {num:3,inicio:"2026-12-07",fim:"2026-12-13",max:6},
+  {num:4,inicio:"2026-12-14",fim:"2026-12-18",max:5},
+];
+function semanaDeData(d) { return SEMANAS.find(s => d >= s.inicio && d <= s.fim) || null; }
+
+function datasDesafio() {
+  const out = []; let cur = new Date("2026-11-23T12:00:00");
+  const fim = new Date("2026-12-18T12:00:00");
+  while (cur <= fim) { out.push(cur.toISOString().slice(0,10)); cur.setDate(cur.getDate()+1); }
+  return out;
+}
+const DIAS_SEMANA = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+function fmtData(d) { const [y,m,dd]=d.split("-"); return `${dd}/${m}/${y}`; }
+function diaSem(d) { return DIAS_SEMANA[new Date(d+"T12:00:00").getDay()]; }
+
+// ---- estado ----
+let participantes = {};   // { id: { nome, instagram, gymratsUser } }
+let registrosDia  = {};   // { participanteId: docData }
+
+// ---- UTILS UI ----
+function flash(msg, ok=true, el=document.getElementById("msg-global")) {
+  el.innerHTML = `<div class="alert ${ok?"alert-ok":"alert-err"}">${msg}</div>`;
+  setTimeout(() => { el.innerHTML = ""; }, 4000);
+}
+
+// ---- AUTENTICAÇÃO ----
+document.getElementById("form-login").addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = document.getElementById("btn-entrar");
+  btn.innerHTML = `<span class="spinner"></span>Entrando…`; btn.disabled = true;
+  try {
+    await signInWithEmailAndPassword(auth,
+      document.getElementById("login-email").value,
+      document.getElementById("login-senha").value
+    );
+  } catch (err) {
+    const msgEl = document.getElementById("msg-login");
+    flash("E-mail ou senha incorretos.", false, msgEl);
+    btn.innerHTML = "Entrar"; btn.disabled = false;
+  }
+});
+
+document.getElementById("btn-sair").addEventListener("click", () => signOut(auth));
+
+onAuthStateChanged(auth, user => {
+  document.getElementById("login-screen").style.display = user ? "none" : "flex";
+  document.getElementById("app-screen").style.display   = user ? "block" : "none";
+  if (user) iniciarApp();
+});
+
+// ---- TABS ----
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab,.painel").forEach(el => el.classList.remove("ativo"));
+    tab.classList.add("ativo");
+    document.getElementById("painel-" + tab.dataset.tab).classList.add("ativo");
+  });
+});
+
+// ---- INICIAR APP ----
+function iniciarApp() {
+  popularSelectDatas();
+  escutarParticipantes();
+
+  document.getElementById("sel-data").addEventListener("change", carregarRegistrosDoDia);
+  document.getElementById("btn-salvar").addEventListener("click", salvarTodos);
+  document.getElementById("form-part").addEventListener("submit", adicionarParticipante);
+}
+
+function popularSelectDatas() {
+  const sel = document.getElementById("sel-data");
+  const hoje = new Date().toISOString().slice(0,10);
+  datasDesafio().forEach(d => {
+    const opt = document.createElement("option");
+    opt.value = d;
+    opt.textContent = `${diaSem(d)} · ${fmtData(d)}`;
+    if (d === hoje) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  atualizarInfoSemana();
+  carregarRegistrosDoDia();
+}
+
+function atualizarInfoSemana() {
+  const data = document.getElementById("sel-data").value;
+  const sem  = semanaDeData(data);
+  document.getElementById("info-semana").textContent =
+    sem ? `Semana ${sem.num} · máx ${sem.max} check-ins` : "";
+}
+
+// ---- ESCUTAR PARTICIPANTES (tempo real) ----
+function escutarParticipantes() {
+  onSnapshot(collection(db, "participantes"), snap => {
+    participantes = {};
+    snap.forEach(d => { participantes[d.id] = d.data(); });
+    renderizarListaParticipantes();
+    renderizarTabelaRegistro();
+  });
+}
+
+function renderizarListaParticipantes() {
+  const lista = document.getElementById("lista-participantes");
+  const parts = Object.entries(participantes);
+  if (!parts.length) { lista.innerHTML = "<p style='color:var(--muted)'>Nenhum participante ainda.</p>"; return; }
+  lista.innerHTML = `<div class="lista-parts">` +
+    parts.map(([id, p]) => `
+      <div class="part-item">
+        <div>
+          <div class="nome">${p.nome}</div>
+          <div class="insta">${p.instagram ? "@"+p.instagram : ""}${p.gymratsUser ? " · "+p.gymratsUser : ""}</div>
+        </div>
+        <button class="btn-remover" data-id="${id}">✕</button>
+      </div>
+    `).join("") +
+  `</div>`;
+
+  lista.querySelectorAll(".btn-remover").forEach(btn => {
+    btn.addEventListener("click", () => removerParticipante(btn.dataset.id));
+  });
+}
+
+// ---- TABELA DE REGISTRO ----
+async function carregarRegistrosDoDia() {
+  atualizarInfoSemana();
+  const data = document.getElementById("sel-data").value;
+  registrosDia = {};
+  const snap = await getDocs(query(collection(db,"registros"), where("data","==",data)));
+  snap.forEach(d => { registrosDia[d.data().participanteId] = { id: d.id, ...d.data() }; });
+  renderizarTabelaRegistro();
+}
+
+function renderizarTabelaRegistro() {
+  const tbody = document.getElementById("tbody-reg");
+  const parts = Object.entries(participantes);
+
+  document.getElementById("aviso-sem-parts").style.display = parts.length ? "none" : "block";
+
+  tbody.innerHTML = "";
+  parts.forEach(([pid, p]) => {
+    const existente = registrosDia[pid];
+    const r = existente || { musculacao:false, cardio_minutos:0, atividade_coletiva:false, post_insta:false };
+
+    const tr = document.createElement("tr");
+    if (existente) tr.classList.add("ja-tem");
+    tr.dataset.pid = pid;
+
+    tr.innerHTML = `
+      <td>
+        ${p.nome}
+        ${existente ? '<span class="badge-existente">já registrado</span>' : ''}
+      </td>
+      <td class="centro">
+        <input type="checkbox" class="chk" name="musculacao" ${r.musculacao?"checked":""}>
+      </td>
+      <td class="centro">
+        <input type="number" class="num-cardio" min="0" max="120" value="${r.cardio_minutos||0}">
+      </td>
+      <td class="centro">
+        <input type="checkbox" class="chk" name="coletiva" ${r.atividade_coletiva?"checked":""}>
+      </td>
+      <td class="centro">
+        <input type="checkbox" class="chk" name="post_insta" ${r.post_insta?"checked":""}>
+      </td>
+      <td class="centro pts-prev" id="pts-${pid}">
+        ${calcPontos({musculacao:r.musculacao,cardio_minutos:r.cardio_minutos||0,atividade_coletiva:r.atividade_coletiva,post_insta:r.post_insta})}
+      </td>`;
+
+    tbody.appendChild(tr);
+
+    // preview pts
+    const atualizar = () => {
+      const vals = getValoresTr(tr);
+      tr.querySelector(`#pts-${pid}`).textContent = calcPontos(vals);
+    };
+    tr.querySelectorAll(".chk, .num-cardio").forEach(el => {
+      el.addEventListener("change", atualizar);
+      el.addEventListener("input",  atualizar);
+    });
+  });
+}
+
+function getValoresTr(tr) {
+  return {
+    musculacao:        tr.querySelector('[name="musculacao"]').checked,
+    cardio_minutos:    parseInt(tr.querySelector('.num-cardio').value) || 0,
+    atividade_coletiva:tr.querySelector('[name="coletiva"]').checked,
+    post_insta:        tr.querySelector('[name="post_insta"]').checked,
+  };
+}
+
+// ---- SALVAR TODOS ----
+async function salvarTodos() {
+  const btn  = document.getElementById("btn-salvar");
+  const data = document.getElementById("sel-data").value;
+  btn.innerHTML = `<span class="spinner"></span>Salvando…`; btn.disabled = true;
+
+  let salvos = 0, atualizados = 0;
+
+  for (const tr of document.querySelectorAll("#tbody-reg tr")) {
+    const pid = tr.dataset.pid;
+    const vals = getValoresTr(tr);
+    const pontos = calcPontos(vals);
+    const dados = { participanteId: pid, data, ...vals, pontos };
+
+    if (registrosDia[pid]) {
+      await setDoc(doc(db, "registros", registrosDia[pid].id), dados);
+      atualizados++;
+    } else {
+      await addDoc(collection(db, "registros"), dados);
+      salvos++;
+    }
+  }
+
+  await carregarRegistrosDoDia();
+  flash(`Salvo! ${salvos} novo(s), ${atualizados} atualizado(s).`);
+  btn.innerHTML = "Salvar todos"; btn.disabled = false;
+}
+
+// ---- PARTICIPANTES CRUD ----
+async function adicionarParticipante(e) {
+  e.preventDefault();
+  const nome     = document.getElementById("part-nome").value.trim();
+  const instagram= document.getElementById("part-insta").value.trim().replace(/^@/,"");
+  const gymrats  = document.getElementById("part-gymrats").value.trim();
+
+  if (!nome) return;
+  await addDoc(collection(db, "participantes"), { nome, instagram, gymratsUser: gymrats });
+  document.getElementById("form-part").reset();
+  flash("Participante adicionado!");
+}
+
+async function removerParticipante(id) {
+  if (!confirm("Remover participante? Os registros dele não serão apagados.")) return;
+  await deleteDoc(doc(db, "participantes", id));
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏋️ 3º Desafio Nanda Carvalho</title>
+  <style>
+    :root {
+      --laranja: #e07b39;
+      --laranja-dark: #c4612a;
+      --bg: #faf7f4;
+      --surface: #ffffff;
+      --text: #1a1a1a;
+      --muted: #777;
+      --border: #e8e0d8;
+      --gold: #f4a261;
+      --silver: #adb5bd;
+      --bronze: #c07d3a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+
+    header {
+      background: linear-gradient(135deg, var(--laranja) 0%, var(--laranja-dark) 100%);
+      color: white; padding: 2rem 1.5rem 1.5rem; text-align: center;
+    }
+    header h1 { font-size: clamp(1.4rem, 4vw, 2rem); letter-spacing: .02em; }
+    header p  { margin-top: .4rem; opacity: .88; font-size: .95rem; }
+    .sub { margin-top: .6rem; font-size: .85rem; opacity: .75; }
+
+    main { max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+    /* Cardio total geral */
+    .hero-stat {
+      display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+    }
+    .stat-pill {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: .8rem 1.4rem; flex: 1; min-width: 140px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .stat-pill .label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .stat-pill .num   { font-size: 1.8rem; font-weight: 700; color: var(--laranja); }
+    .stat-pill .unit  { font-size: .8rem; color: var(--muted); }
+
+    /* Tabela */
+    .tabela-wrap { overflow-x: auto; border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,.07); }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); }
+
+    thead tr { background: var(--text); }
+    th {
+      color: white; padding: .75rem 1rem; text-align: left;
+      font-size: .78rem; text-transform: uppercase; letter-spacing: .06em;
+      white-space: nowrap;
+    }
+    th.centro, td.centro { text-align: center; }
+
+    td { padding: .8rem 1rem; border-bottom: 1px solid var(--border); font-size: .92rem; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    tbody tr.top1 td { background: rgba(244,162,97,.13); }
+    tbody tr.top2 td { background: rgba(173,181,189,.10); }
+    tbody tr.top3 td { background: rgba(192,125,58,.09); }
+    tbody tr:hover td { background: #fdf3ec; }
+
+    .pos { font-size: 1.2rem; text-align: center; width: 50px; }
+    .nome-col { font-weight: 700; }
+    .pts-col { font-weight: 700; font-size: 1.1rem; color: var(--laranja); }
+
+    .cardio-destaque {
+      background: #fff4ec; color: var(--laranja-dark);
+      font-weight: 700; border-radius: 6px; padding: .15rem .5rem;
+      display: inline-block;
+    }
+
+    /* Legenda desempate */
+    .legenda {
+      margin-top: 1rem; font-size: .78rem; color: var(--muted);
+      border-left: 3px solid var(--border); padding-left: .8rem;
+    }
+
+    /* Semana progress */
+    .semana-info {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1rem 1.4rem; margin-bottom: 1.5rem;
+      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    }
+    .semana-info .badge {
+      background: var(--laranja); color: white;
+      border-radius: 20px; padding: .3rem .9rem; font-size: .85rem; font-weight: 600;
+    }
+    .semana-info span { font-size: .88rem; color: var(--muted); }
+
+    .loading { text-align: center; padding: 3rem; color: var(--muted); }
+    .vazio   { text-align: center; padding: 2rem; color: var(--muted); font-style: italic; }
+
+    @media (max-width: 600px) {
+      th, td { padding: .6rem .6rem; font-size: .82rem; }
+      .hide-mobile { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏋️ 3º Desafio Nanda Carvalho</h1>
+  <p>Personal Trainer Fernanda Carvalho · <strong>@nandacarvalhopersonal</strong></p>
+  <p class="sub">23 de novembro → 18 de dezembro de 2026</p>
+</header>
+
+<main>
+  <div id="semana-info" class="semana-info" style="display:none">
+    <span class="badge" id="badge-semana"></span>
+    <span id="texto-semana"></span>
+  </div>
+
+  <div class="hero-stat" id="hero-stats">
+    <div class="stat-pill">
+      <span class="label">Participantes</span>
+      <span class="num" id="stat-participantes">—</span>
+    </div>
+    <div class="stat-pill">
+      <span class="label">Total cardio (min)</span>
+      <span class="num" id="stat-cardio">—</span>
+      <span class="unit">minutos acumulados</span>
+    </div>
+    <div class="stat-pill">
+      <span class="label">Total de registros</span>
+      <span class="num" id="stat-registros">—</span>
+      <span class="unit">check-ins no período</span>
+    </div>
+  </div>
+
+  <div id="loading" class="loading">Carregando ranking…</div>
+
+  <div class="tabela-wrap" id="tabela-wrap" style="display:none">
+    <table>
+      <thead>
+        <tr>
+          <th class="centro">#</th>
+          <th>Participante</th>
+          <th class="centro">Pontos</th>
+          <th class="centro" title="1º desempate: maior tempo de cardio">Cardio (min)</th>
+          <th class="centro hide-mobile" title="2º desempate: dias registrados">Dias</th>
+          <th class="centro hide-mobile" title="3º desempate: encontros coletivos">Coletivas</th>
+          <th class="centro hide-mobile" title="4º desempate: posts no Instagram">Posts</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-ranking"></tbody>
+    </table>
+  </div>
+
+  <p class="legenda" id="legenda" style="display:none">
+    Desempate: 1º Cardio (min) · 2º Dias registrados · 3º Encontros coletivos · 4º Posts Instagram · 5º Sorteio ao vivo
+  </p>
+
+  <p id="atualizado" style="text-align:right; font-size:.75rem; color:var(--muted); margin-top:.6rem;"></p>
+</main>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp }                           from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+  import { getFirestore, collection, onSnapshot }   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+  // ---- config ----
+  const cfg = {
+    apiKey:            "COLE_AQUI",
+    authDomain:        "COLE_AQUI",
+    projectId:         "COLE_AQUI",
+    storageBucket:     "COLE_AQUI",
+    messagingSenderId: "COLE_AQUI",
+    appId:             "COLE_AQUI"
+  };
+
+  const app = initializeApp(cfg);
+  const db  = getFirestore(app);
+
+  // ---- regras de pontuação ----
+  function ptsCardio(min) {
+    if (min >= 50) return 5;
+    if (min >= 40) return 4;
+    if (min >= 30) return 3;
+    if (min >= 20) return 2;
+    return 0;
+  }
+
+  // ---- semana atual ----
+  const SEMANAS = [
+    { num:1, inicio:"2026-11-23", fim:"2026-11-29" },
+    { num:2, inicio:"2026-11-30", fim:"2026-12-06" },
+    { num:3, inicio:"2026-12-07", fim:"2026-12-13" },
+    { num:4, inicio:"2026-12-14", fim:"2026-12-18" },
+  ];
+  function semanaAtual() {
+    const hoje = new Date().toISOString().slice(0,10);
+    return SEMANAS.find(s => hoje >= s.inicio && hoje <= s.fim) || null;
+  }
+  function fmt(d) { const [y,m,dd]=d.split("-"); return `${dd}/${m}`; }
+
+  const sem = semanaAtual();
+  if (sem) {
+    document.getElementById("semana-info").style.display = "flex";
+    document.getElementById("badge-semana").textContent  = `Semana ${sem.num}`;
+    document.getElementById("texto-semana").textContent  = `${fmt(sem.inicio)} a ${fmt(sem.fim)} de 2026`;
+  }
+
+  // ---- listeners em tempo real ----
+  let participantes = {};
+  let registros     = [];
+
+  function recalcularRanking() {
+    // agrega por participante
+    const agg = {};
+    for (const pid of Object.keys(participantes)) {
+      agg[pid] = { nome: participantes[pid].nome, pts:0, cardio_min:0, dias:0, coletivas:0, posts:0 };
+    }
+    for (const r of registros) {
+      if (!agg[r.participanteId]) continue;
+      const a = agg[r.participanteId];
+      a.pts       += r.pontos || 0;
+      a.cardio_min+= r.cardio_minutos || 0;
+      a.dias++;
+      if (r.atividade_coletiva) a.coletivas++;
+      if (r.post_insta)         a.posts++;
+    }
+
+    const lista = Object.values(agg).sort((a,b) =>
+      b.pts - a.pts ||
+      b.cardio_min - a.cardio_min ||
+      b.dias - a.dias ||
+      b.coletivas - a.coletivas ||
+      b.posts - a.posts
+    );
+
+    // stats gerais
+    const totalCardio = lista.reduce((s,p)=>s+p.cardio_min, 0);
+    document.getElementById("stat-participantes").textContent = lista.length;
+    document.getElementById("stat-cardio").textContent        = totalCardio;
+    document.getElementById("stat-registros").textContent     = registros.length;
+
+    // tbody
+    const tbody = document.getElementById("tbody-ranking");
+    tbody.innerHTML = "";
+    if (!lista.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="vazio">Nenhum participante ainda.</td></tr>`;
+    } else {
+      lista.forEach((p, i) => {
+        const cls = i===0?"top1":i===1?"top2":i===2?"top3":"";
+        const med = i===0?"🥇":i===1?"🥈":i===2?"🥉":i+1;
+        tbody.innerHTML += `
+          <tr class="${cls}">
+            <td class="pos">${med}</td>
+            <td class="nome-col">${p.nome}</td>
+            <td class="pts-col centro">${p.pts}</td>
+            <td class="centro"><span class="cardio-destaque">${p.cardio_min}</span></td>
+            <td class="centro hide-mobile">${p.dias}/26</td>
+            <td class="centro hide-mobile">${p.coletivas}</td>
+            <td class="centro hide-mobile">${p.posts}</td>
+          </tr>`;
+      });
+    }
+
+    document.getElementById("loading").style.display      = "none";
+    document.getElementById("tabela-wrap").style.display  = "block";
+    document.getElementById("legenda").style.display      = "block";
+    document.getElementById("atualizado").textContent =
+      "Atualizado em tempo real · " + new Date().toLocaleTimeString("pt-BR");
+  }
+
+  onSnapshot(collection(db, "participantes"), snap => {
+    participantes = {};
+    snap.forEach(d => { participantes[d.id] = d.data(); });
+    recalcularRanking();
+  });
+
+  onSnapshot(collection(db, "registros"), snap => {
+    registros = [];
+    snap.forEach(d => { registros.push({ id: d.id, ...d.data() }); });
+    recalcularRanking();
+  });
+</script>
+
+</body>
+</html>
