@@ -124,10 +124,18 @@
 
     .pts-prev { color: var(--laranja); font-weight: 700; font-size: 1rem; }
     .ja-tem   { background: #fff4ec !important; }
-    .ja-tem td { opacity: .6; }
+    .ja-tem td { opacity: .75; }
     .badge-existente {
       background: var(--laranja); color: white; font-size: .7rem; border-radius: 10px;
       padding: .15rem .5rem; margin-left: .4rem; vertical-align: middle;
+    }
+    .badge-semana {
+      display: inline-block; font-size: .7rem; font-weight: 700;
+      background: var(--verde-bg); color: var(--verde);
+      border-radius: 10px; padding: .1rem .5rem; margin-bottom: .2rem;
+    }
+    .badge-semana.cheio {
+      background: var(--erro-bg); color: var(--erro);
     }
 
     .registro-footer {
@@ -197,10 +205,10 @@
           <thead>
             <tr>
               <th>Participante</th>
-              <th class="centro" title="+20 pts">Musculação</th>
-              <th class="centro">Cardio (min)</th>
-              <th class="centro" title="+5 pts">At. Coletiva</th>
-              <th class="centro" title="+2 pts">Post Insta</th>
+              <th class="centro" title="+20 pts · máx 6x/semana">Musculação<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
+              <th class="centro" title="máx 6x/semana">Cardio (min)<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
+              <th class="centro" title="+5 pts · máx 1x/semana">At. Coletiva<br><small style="font-weight:400;opacity:.7">máx 1/sem</small></th>
+              <th class="centro" title="+2 pts · máx 6x/semana">Post Insta<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
               <th class="centro">Pts</th>
             </tr>
           </thead>
@@ -301,8 +309,9 @@ function fmtData(d) { const [y,m,dd]=d.split("-"); return `${dd}/${m}/${y}`; }
 function diaSem(d) { return DIAS_SEMANA[new Date(d+"T12:00:00").getDay()]; }
 
 // ---- estado ----
-let participantes = {};   // { id: { nome, instagram, gymratsUser } }
-let registrosDia  = {};   // { participanteId: docData }
+let participantes  = {};  // { id: { nome, instagram, gymratsUser } }
+let registrosDia   = {};  // { participanteId: {id, ...dados} }
+let contagemSemana = {};  // { participanteId: {musculacao, cardio, post_insta, coletiva} }
 
 // ---- UTILS UI ----
 function flash(msg, ok=true, el=document.getElementById("msg-global")) {
@@ -410,54 +419,96 @@ function renderizarListaParticipantes() {
 async function carregarRegistrosDoDia() {
   atualizarInfoSemana();
   const data = document.getElementById("sel-data").value;
+  const sem  = semanaDeData(data);
+
+  // carrega registros do dia
   registrosDia = {};
-  const snap = await getDocs(query(collection(db,"registros"), where("data","==",data)));
-  snap.forEach(d => { registrosDia[d.data().participanteId] = { id: d.id, ...d.data() }; });
+  const snapDia = await getDocs(query(collection(db,"registros"), where("data","==",data)));
+  snapDia.forEach(d => { registrosDia[d.data().participanteId] = { id: d.id, ...d.data() }; });
+
+  // carrega contagem da semana inteira (excluindo o dia atual para não contar duas vezes)
+  contagemSemana = {};
+  if (sem) {
+    const snapSem = await getDocs(
+      query(collection(db,"registros"),
+        where("data",">=",sem.inicio),
+        where("data","<=",sem.fim)
+      )
+    );
+    snapSem.forEach(d => {
+      const r = d.data();
+      if (r.data === data) return; // ignora o dia atual
+      const pid = r.participanteId;
+      if (!contagemSemana[pid]) contagemSemana[pid] = {musculacao:0,cardio:0,post_insta:0,coletiva:0};
+      if (r.musculacao)         contagemSemana[pid].musculacao++;
+      if (r.cardio_minutos > 0) contagemSemana[pid].cardio++;
+      if (r.post_insta)         contagemSemana[pid].post_insta++;
+      if (r.atividade_coletiva) contagemSemana[pid].coletiva++;
+    });
+  }
+
   renderizarTabelaRegistro();
 }
 
 function renderizarTabelaRegistro() {
   const tbody = document.getElementById("tbody-reg");
   const parts = Object.entries(participantes);
+  const data  = document.getElementById("sel-data").value;
+  const sem   = semanaDeData(data);
+  const MAX6  = sem ? sem.max : 6;
 
   document.getElementById("aviso-sem-parts").style.display = parts.length ? "none" : "block";
 
   tbody.innerHTML = "";
   parts.forEach(([pid, p]) => {
     const existente = registrosDia[pid];
-    const r = existente || { musculacao:false, cardio_minutos:0, atividade_coletiva:false, post_insta:false };
+    const r  = existente || { musculacao:false, cardio_minutos:0, atividade_coletiva:false, post_insta:false };
+    const ct = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
+
+    // limites: se já tem registro do dia, aquela unidade já estava contada → não bloqueia edição
+    // se não tem registro do dia, verifica se a semana já está cheia
+    const bloqMusc    = !existente && ct.musculacao    >= MAX6;
+    const bloqCardio  = !existente && ct.cardio        >= MAX6;
+    const bloqPost    = !existente && ct.post_insta    >= MAX6;
+    const bloqColetiva= !existente && ct.coletiva      >= 1;
+
+    function cellChk(name, checked, bloq, usado, maximo) {
+      const semBadge = `<span class="badge-semana ${bloq?'cheio':''}">${usado}/${maximo}</span>`;
+      if (bloq) {
+        return `<td class="centro">${semBadge}<br><span style="font-size:.75rem;color:var(--erro)">limite atingido</span></td>`;
+      }
+      return `<td class="centro">${semBadge}<br><input type="checkbox" class="chk" name="${name}" ${checked?"checked":""}></td>`;
+    }
+
+    function cellCardio(val, bloq, usado, maximo) {
+      const semBadge = `<span class="badge-semana ${bloq?'cheio':''}">${usado}/${maximo}</span>`;
+      if (bloq) {
+        return `<td class="centro">${semBadge}<br><span style="font-size:.75rem;color:var(--erro)">limite atingido</span></td>`;
+      }
+      return `<td class="centro">${semBadge}<br><input type="number" class="num-cardio" min="0" max="120" value="${val}"></td>`;
+    }
 
     const tr = document.createElement("tr");
     if (existente) tr.classList.add("ja-tem");
     tr.dataset.pid = pid;
 
     tr.innerHTML = `
-      <td>
+      <td class="nome-col">
         ${p.nome}
         ${existente ? '<span class="badge-existente">já registrado</span>' : ''}
       </td>
-      <td class="centro">
-        <input type="checkbox" class="chk" name="musculacao" ${r.musculacao?"checked":""}>
-      </td>
-      <td class="centro">
-        <input type="number" class="num-cardio" min="0" max="120" value="${r.cardio_minutos||0}">
-      </td>
-      <td class="centro">
-        <input type="checkbox" class="chk" name="coletiva" ${r.atividade_coletiva?"checked":""}>
-      </td>
-      <td class="centro">
-        <input type="checkbox" class="chk" name="post_insta" ${r.post_insta?"checked":""}>
-      </td>
+      ${cellChk("musculacao", r.musculacao, bloqMusc, ct.musculacao + (existente&&r.musculacao?1:0), MAX6)}
+      ${cellCardio(r.cardio_minutos||0, bloqCardio, ct.cardio + (existente&&r.cardio_minutos>0?1:0), MAX6)}
+      ${cellChk("coletiva", r.atividade_coletiva, bloqColetiva, ct.coletiva + (existente&&r.atividade_coletiva?1:0), 1)}
+      ${cellChk("post_insta", r.post_insta, bloqPost, ct.post_insta + (existente&&r.post_insta?1:0), MAX6)}
       <td class="centro pts-prev" id="pts-${pid}">
         ${calcPontos({musculacao:r.musculacao,cardio_minutos:r.cardio_minutos||0,atividade_coletiva:r.atividade_coletiva,post_insta:r.post_insta})}
       </td>`;
 
     tbody.appendChild(tr);
 
-    // preview pts
     const atualizar = () => {
-      const vals = getValoresTr(tr);
-      tr.querySelector(`#pts-${pid}`).textContent = calcPontos(vals);
+      tr.querySelector(`#pts-${pid}`).textContent = calcPontos(getValoresTr(tr));
     };
     tr.querySelectorAll(".chk, .num-cardio").forEach(el => {
       el.addEventListener("change", atualizar);
@@ -467,11 +518,16 @@ function renderizarTabelaRegistro() {
 }
 
 function getValoresTr(tr) {
+  // se o campo foi bloqueado (limite atingido), retorna false/0 para não pontuar
+  const chkMusc  = tr.querySelector('[name="musculacao"]');
+  const inpCard  = tr.querySelector('.num-cardio');
+  const chkCole  = tr.querySelector('[name="coletiva"]');
+  const chkPost  = tr.querySelector('[name="post_insta"]');
   return {
-    musculacao:        tr.querySelector('[name="musculacao"]').checked,
-    cardio_minutos:    parseInt(tr.querySelector('.num-cardio').value) || 0,
-    atividade_coletiva:tr.querySelector('[name="coletiva"]').checked,
-    post_insta:        tr.querySelector('[name="post_insta"]').checked,
+    musculacao:        chkMusc ? chkMusc.checked : false,
+    cardio_minutos:    inpCard ? (parseInt(inpCard.value)||0) : 0,
+    atividade_coletiva:chkCole ? chkCole.checked : false,
+    post_insta:        chkPost ? chkPost.checked : false,
   };
 }
 
@@ -482,15 +538,29 @@ async function salvarTodos() {
   btn.innerHTML = `<span class="spinner"></span>Salvando…`; btn.disabled = true;
 
   let salvos = 0, atualizados = 0;
+  const data = document.getElementById("sel-data").value;
+  const sem  = semanaDeData(data);
 
   for (const tr of document.querySelectorAll("#tbody-reg tr")) {
-    const pid = tr.dataset.pid;
+    const pid  = tr.dataset.pid;
     const vals = getValoresTr(tr);
-    const pontos = calcPontos(vals);
-    const dados = { participanteId: pid, data, ...vals, pontos };
+    const ct   = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
+    const MAX6 = sem ? sem.max : 6;
+    const existente = registrosDia[pid];
 
-    if (registrosDia[pid]) {
-      await setDoc(doc(db, "registros", registrosDia[pid].id), dados);
+    // aplica limite: se a semana já está cheia e não é edição, zera o campo
+    if (!existente) {
+      if (ct.musculacao    >= MAX6) vals.musculacao        = false;
+      if (ct.cardio        >= MAX6) vals.cardio_minutos    = 0;
+      if (ct.post_insta    >= MAX6) vals.post_insta        = false;
+      if (ct.coletiva      >= 1)    vals.atividade_coletiva= false;
+    }
+
+    const pontos = calcPontos(vals);
+    const dados  = { participanteId: pid, data, ...vals, pontos };
+
+    if (existente) {
+      await setDoc(doc(db, "registros", existente.id), dados);
       atualizados++;
     } else {
       await addDoc(collection(db, "registros"), dados);
