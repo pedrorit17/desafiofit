@@ -123,7 +123,7 @@
     <div class="stat-pill">
       <span class="label">Total cardio (min)</span>
       <span class="num" id="stat-cardio">—</span>
-      <span class="unit">minutos acumulados</span>
+      <span class="unit">tempo acumulado</span>
     </div>
     <div class="stat-pill">
       <span class="label">Total de registros</span>
@@ -141,7 +141,7 @@
           <th class="centro">#</th>
           <th>Participante</th>
           <th class="centro">Pontos</th>
-          <th class="centro" title="1º DESEMPATE: maior tempo acumulado em cardio">⏱ Cardio (min)<br><small style="font-weight:400;opacity:.75;font-size:.7rem">1º desempate</small></th>
+          <th class="centro" title="1º DESEMPATE: maior tempo acumulado em cardio">⏱ Cardio (min:seg)<br><small style="font-weight:400;opacity:.75;font-size:.7rem">1º desempate</small></th>
           <th class="centro hide-mobile" title="2º desempate: maior nº de dias com atividade no GymRats">Dias<br><small style="font-weight:400;opacity:.75;font-size:.7rem">2º desempate</small></th>
           <th class="centro hide-mobile" title="3º desempate: maior nº de encontros coletivos">Coletivas<br><small style="font-weight:400;opacity:.75;font-size:.7rem">3º desempate</small></th>
           <th class="centro hide-mobile" title="4º desempate: maior nº de posts marcando @nandacarvalhopersonal e @terrafarma_manipulacao">Posts<br><small style="font-weight:400;opacity:.75;font-size:.7rem">4º desempate</small></th>
@@ -184,6 +184,10 @@
     if (min >= 20) return 2;
     return 0;
   }
+  function fmtMmSs(seg) {
+    const m = Math.floor(seg/60), s = seg%60;
+    return `${m}:${String(s).padStart(2,'0')}`;
+  }
 
   // ---- semana atual ----
   const SEMANAS = [
@@ -213,13 +217,14 @@
     // agrega por participante
     const agg = {};
     for (const pid of Object.keys(participantes)) {
-      agg[pid] = { nome: participantes[pid].nome, pts:0, cardio_min:0, dias:0, coletivas:0, posts:0 };
+      agg[pid] = { nome: participantes[pid].nome, pts:0, cardio_seg:0, dias:0, coletivas:0, posts:0 };
     }
     for (const r of registros) {
       if (!agg[r.participanteId]) continue;
       const a = agg[r.participanteId];
-      a.pts       += r.pontos || 0;
-      a.cardio_min+= r.cardio_minutos || 0;
+      const seg = r.cardio_segundos != null ? r.cardio_segundos : (r.cardio_minutos||0)*60;
+      a.pts        += r.pontos || 0;
+      a.cardio_seg += seg;
       a.dias++;
       if (r.atividade_coletiva) a.coletivas++;
       if (r.post_insta)         a.posts++;
@@ -227,16 +232,16 @@
 
     const lista = Object.values(agg).sort((a,b) =>
       b.pts - a.pts ||
-      b.cardio_min - a.cardio_min ||
+      b.cardio_seg - a.cardio_seg ||
       b.dias - a.dias ||
       b.coletivas - a.coletivas ||
       b.posts - a.posts
     );
 
     // stats gerais
-    const totalCardio = lista.reduce((s,p)=>s+p.cardio_min, 0);
+    const totalSeg = lista.reduce((s,p)=>s+p.cardio_seg, 0);
     document.getElementById("stat-participantes").textContent = lista.length;
-    document.getElementById("stat-cardio").textContent        = totalCardio;
+    document.getElementById("stat-cardio").textContent        = fmtMmSs(totalSeg);
     document.getElementById("stat-registros").textContent     = registros.length;
 
     // tbody
@@ -253,7 +258,7 @@
             <td class="pos">${med}</td>
             <td class="nome-col">${p.nome}</td>
             <td class="pts-col centro">${p.pts}</td>
-            <td class="centro"><span class="cardio-destaque">${p.cardio_min}</span></td>
+            <td class="centro"><span class="cardio-destaque">${fmtMmSs(p.cardio_seg)}</span></td>
             <td class="centro hide-mobile">${p.dias}/26</td>
             <td class="centro hide-mobile">${p.coletivas}</td>
             <td class="centro hide-mobile">${p.posts}</td>
