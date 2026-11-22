@@ -150,6 +150,47 @@
       border: 2px solid #fff; border-top-color: transparent;
       border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: .4rem; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- mobile: cards de registro ---- */
+    .cards-reg-mobile { display: none; flex-direction: column; gap: .8rem; }
+    .reg-card {
+      background: var(--surface); border-radius: 12px;
+      padding: 1rem 1.1rem; border: 1px solid var(--border);
+      box-shadow: 0 1px 6px rgba(0,0,0,.05);
+    }
+    .reg-card.ja-tem { background: #fff4ec; border-color: var(--laranja); }
+    .reg-card .rc-nome {
+      font-weight: 700; font-size: 1rem; margin-bottom: .8rem;
+      display: flex; align-items: center; gap: .4rem; flex-wrap: wrap;
+    }
+    .reg-card .rc-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .45rem 0; border-bottom: 1px solid var(--border);
+    }
+    .reg-card .rc-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .reg-card .rc-label { font-size: .88rem; color: var(--text); flex: 1; }
+    .reg-card .rc-ctrl  { display: flex; align-items: center; gap: .5rem; }
+    .reg-card input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--laranja); }
+    .reg-card input[type="number"] {
+      padding: .3rem .4rem; border: 1.5px solid var(--border); border-radius: 6px;
+      font-size: .9rem; text-align: center; width: 56px;
+    }
+    .reg-card input[type="number"]:focus { outline: none; border-color: var(--laranja); }
+    .reg-card .rc-pts { font-weight: 700; color: var(--laranja); font-size: 1rem; }
+    .reg-card .rc-limite { font-size: .75rem; color: var(--erro); }
+
+    @media (max-width: 700px) {
+      .tabela-wrap { display: none; }
+      .cards-reg-mobile { display: flex; }
+      .config-dia { flex-direction: column; align-items: stretch; }
+      .registro-footer { flex-direction: column; gap: .5rem; }
+      .registro-footer .btn { width: 100%; text-align: center; }
+    }
+    @media (max-width: 640px) {
+      div[style*="grid-template-columns:1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -201,6 +242,8 @@
       <div id="aviso-sem-parts" class="alert alert-err" style="display:none">
         Nenhum participante cadastrado. Vá à aba <strong>Participantes</strong> para adicionar.
       </div>
+
+      <div class="cards-reg-mobile" id="cards-reg-mobile"></div>
 
       <div class="tabela-wrap">
         <table class="reg" id="tabela-reg">
@@ -530,6 +573,88 @@ function renderizarTabelaRegistro() {
       el.addEventListener("input",  atualizar);
     });
   });
+
+  // ---- cards mobile ----
+  const cardsEl = document.getElementById("cards-reg-mobile");
+  cardsEl.innerHTML = "";
+  document.getElementById("aviso-sem-parts").style.display = parts.length ? "none" : "block";
+
+  parts.forEach(([pid, p]) => {
+    const existente = registrosDia[pid];
+    const rSeg2 = existente
+      ? (existente.cardio_segundos != null ? existente.cardio_segundos : (existente.cardio_minutos||0)*60)
+      : 0;
+    const r2  = existente || { musculacao:false, atividade_coletiva:false, post_insta:false };
+    const ct  = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
+    const MAX6 = sem ? sem.max : 6;
+    const bloqMusc  = !existente && ct.musculacao  >= MAX6;
+    const bloqCard  = !existente && ct.cardio      >= MAX6;
+    const bloqPost  = !existente && ct.post_insta  >= MAX6;
+    const bloqCole  = !existente && ct.coletiva    >= 1;
+    const minVal = Math.floor(rSeg2/60), segVal = rSeg2%60;
+
+    const card = document.createElement("div");
+    card.className = `reg-card${existente?" ja-tem":""}`;
+    card.dataset.pid = pid;
+
+    const badge = existente ? '<span class="badge-existente">já registrado</span>' : '';
+
+    function mobileRow(label, badgeSem, ctrl) {
+      return `<div class="rc-row"><span class="rc-label">${label} ${badgeSem}</span><div class="rc-ctrl">${ctrl}</div></div>`;
+    }
+    function bSem(usado, max, bloq) {
+      return `<span class="badge-semana ${bloq?'cheio':''}" style="font-size:.68rem">${usado}/${max}</span>`;
+    }
+
+    card.innerHTML = `
+      <div class="rc-nome">${p.nome}${badge}</div>
+      ${bloqMusc
+        ? mobileRow('💪 Musculação', bSem(ct.musculacao,MAX6,true), `<span class="rc-limite">limite</span>`)
+        : mobileRow('💪 Musculação', bSem(ct.musculacao+(existente&&r2.musculacao?1:0),MAX6,false),
+            `<input type="checkbox" class="chk" name="musculacao" ${r2.musculacao?"checked":""}>`)
+      }
+      ${bloqCard
+        ? mobileRow('⏱ Cardio (min:seg)', bSem(ct.cardio,MAX6,true), `<span class="rc-limite">limite</span>`)
+        : mobileRow('⏱ Cardio (min:seg)', bSem(ct.cardio+(existente&&rSeg2>0?1:0),MAX6,false),
+            `<input type="number" class="num-cardio-min" min="0" max="300" value="${minVal}"><span>:</span><input type="number" class="num-cardio-seg" min="0" max="59" value="${segVal}">`)
+      }
+      ${bloqCole
+        ? mobileRow('🤝 At. Coletiva', bSem(ct.coletiva,1,true), `<span class="rc-limite">limite</span>`)
+        : mobileRow('🤝 At. Coletiva', bSem(ct.coletiva+(existente&&r2.atividade_coletiva?1:0),1,false),
+            `<input type="checkbox" class="chk" name="coletiva" ${r2.atividade_coletiva?"checked":""}>`)
+      }
+      ${bloqPost
+        ? mobileRow('📸 Post Insta', bSem(ct.post_insta,MAX6,true), `<span class="rc-limite">limite</span>`)
+        : mobileRow('📸 Post Insta', bSem(ct.post_insta+(existente&&r2.post_insta?1:0),MAX6,false),
+            `<input type="checkbox" class="chk" name="post_insta" ${r2.post_insta?"checked":""}>`)
+      }
+      <div class="rc-row" style="justify-content:flex-end">
+        <span style="font-size:.85rem;color:var(--muted);margin-right:.5rem">Pontos estimados:</span>
+        <span class="rc-pts" id="mpts-${pid}">${calcPontos({musculacao:r2.musculacao,cardio_minutos:Math.floor(rSeg2/60),atividade_coletiva:r2.atividade_coletiva,post_insta:r2.post_insta})}</span>
+      </div>`;
+
+    card.querySelectorAll(".chk, .num-cardio-min, .num-cardio-seg").forEach(el => {
+      el.addEventListener("change", () => card.querySelector(`#mpts-${pid}`).textContent = calcPontos(getValoresCard(card)));
+      el.addEventListener("input",  () => card.querySelector(`#mpts-${pid}`).textContent = calcPontos(getValoresCard(card)));
+    });
+    cardsEl.appendChild(card);
+  });
+}
+
+function getValoresCard(card) {
+  const chkMusc = card.querySelector('[name="musculacao"]');
+  const inpMin  = card.querySelector('.num-cardio-min');
+  const inpSeg  = card.querySelector('.num-cardio-seg');
+  const chkCole = card.querySelector('[name="coletiva"]');
+  const chkPost = card.querySelector('[name="post_insta"]');
+  const totalSeg = inpMin ? (parseInt(inpMin.value)||0)*60 + Math.min(parseInt(inpSeg?.value)||0,59) : 0;
+  return {
+    musculacao:         chkMusc ? chkMusc.checked : false,
+    cardio_segundos:    totalSeg,
+    cardio_minutos:     Math.floor(totalSeg/60),
+    atividade_coletiva: chkCole ? chkCole.checked : false,
+    post_insta:         chkPost ? chkPost.checked : false,
+  };
 }
 
 function getValoresTr(tr) {
@@ -557,9 +682,19 @@ async function salvarTodos() {
   const sem  = semanaDeData(data);
   let salvos = 0, atualizados = 0;
 
-  for (const tr of document.querySelectorAll("#tbody-reg tr")) {
-    const pid  = tr.dataset.pid;
-    const vals = getValoresTr(tr);
+  // coleta de todos os elementos com pid (tabela desktop + cards mobile)
+  const elementos = [...document.querySelectorAll("#tbody-reg tr[data-pid], #cards-reg-mobile .reg-card[data-pid]")];
+  // desduplicar por pid (desktop e mobile podem estar ambos presentes)
+  const pidsVistos = new Set();
+  const elementosUnicos = elementos.filter(el => {
+    if (pidsVistos.has(el.dataset.pid)) return false;
+    pidsVistos.add(el.dataset.pid); return true;
+  });
+
+  for (const el of elementosUnicos) {
+    const pid  = el.dataset.pid;
+    const isTr = el.tagName === "TR";
+    const vals = isTr ? getValoresTr(el) : getValoresCard(el);
     const ct   = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
     const MAX6 = sem ? sem.max : 6;
     const existente = registrosDia[pid];

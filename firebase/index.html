@@ -95,9 +95,31 @@
     .loading { text-align: center; padding: 3rem; color: var(--muted); }
     .vazio   { text-align: center; padding: 2rem; color: var(--muted); font-style: italic; }
 
-    @media (max-width: 600px) {
-      th, td { padding: .6rem .6rem; font-size: .82rem; }
-      .hide-mobile { display: none; }
+    /* ---- cards mobile ---- */
+    .cards-mobile { display: none; flex-direction: column; gap: .7rem; }
+    .rank-card {
+      background: var(--surface); border-radius: 14px;
+      padding: 1rem 1.1rem; border: 1px solid var(--border);
+      display: flex; align-items: center; gap: .9rem;
+    }
+    .rank-card.top1 { border-left: 4px solid var(--gold); }
+    .rank-card.top2 { border-left: 4px solid var(--silver); }
+    .rank-card.top3 { border-left: 4px solid var(--bronze); }
+    .rank-card .medal { font-size: 1.6rem; min-width: 2rem; text-align: center; }
+    .rank-card .info  { flex: 1; }
+    .rank-card .info .nome  { font-weight: 700; font-size: 1rem; }
+    .rank-card .info .meta  { display: flex; gap: .6rem; margin-top: .35rem; flex-wrap: wrap; }
+    .rank-card .info .meta span {
+      font-size: .78rem; color: var(--muted);
+      background: var(--bg); border-radius: 6px; padding: .15rem .5rem;
+    }
+    .rank-card .pts-big { font-size: 1.5rem; font-weight: 800; color: var(--laranja); }
+
+    @media (max-width: 640px) {
+      .tabela-wrap { display: none; }
+      .cards-mobile { display: flex; }
+      .hero-stat .stat-pill { min-width: 100px; }
+      .stat-pill .num { font-size: 1.4rem; }
     }
   </style>
 </head>
@@ -133,6 +155,9 @@
   </div>
 
   <div id="loading" class="loading">Carregando ranking…</div>
+
+  <!-- cards mobile -->
+  <div class="cards-mobile" id="cards-mobile"></div>
 
   <div class="tabela-wrap" id="tabela-wrap" style="display:none">
     <table>
@@ -263,6 +288,33 @@
             <td class="centro hide-mobile">${p.coletivas}</td>
             <td class="centro hide-mobile">${p.posts}</td>
           </tr>`;
+      });
+    }
+
+    // cards mobile
+    const cardsEl = document.getElementById("cards-mobile");
+    cardsEl.innerHTML = "";
+    if (!lista.length) {
+      cardsEl.innerHTML = `<p class="vazio">Nenhum participante ainda.</p>`;
+    } else {
+      lista.forEach((p, i) => {
+        const cls  = i===0?"top1":i===1?"top2":i===2?"top3":"";
+        const med  = i===0?"🥇":i===1?"🥈":i===2?"🥉":i+1;
+        const card = document.createElement("div");
+        card.className = `rank-card ${cls}`;
+        card.innerHTML = `
+          <div class="medal">${med}</div>
+          <div class="info">
+            <div class="nome">${p.nome}</div>
+            <div class="meta">
+              <span>⏱ ${fmtMmSs(p.cardio_seg)}</span>
+              <span>📅 ${p.dias} dias</span>
+              <span>🤝 ${p.coletivas} coletivas</span>
+              <span>📸 ${p.posts} posts</span>
+            </div>
+          </div>
+          <div class="pts-big">${p.pts}<span style="font-size:.8rem;font-weight:400;color:var(--muted)">pts</span></div>`;
+        cardsEl.appendChild(card);
       });
     }
 
