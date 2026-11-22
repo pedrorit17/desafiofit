@@ -164,7 +164,7 @@
       </div>
       <div class="campo">
         <label>Senha</label>
-        <input type="password" id="login-senha" required placeholder="••••••••">
+        <input type="password" id="login-senha" required placeholder="••••••••" autocomplete="current-password">
       </div>
       <button type="submit" class="btn btn-laranja" style="width:100%;margin-top:.5rem" id="btn-entrar">Entrar</button>
     </form>
@@ -534,12 +534,11 @@ function getValoresTr(tr) {
 // ---- SALVAR TODOS ----
 async function salvarTodos() {
   const btn  = document.getElementById("btn-salvar");
-  const data = document.getElementById("sel-data").value;
   btn.innerHTML = `<span class="spinner"></span>Salvando…`; btn.disabled = true;
 
-  let salvos = 0, atualizados = 0;
   const data = document.getElementById("sel-data").value;
   const sem  = semanaDeData(data);
+  let salvos = 0, atualizados = 0;
 
   for (const tr of document.querySelectorAll("#tbody-reg tr")) {
     const pid  = tr.dataset.pid;
