@@ -14,182 +14,167 @@
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
     /* ---- login ---- */
-    #login-screen {
-      display: flex; align-items: center; justify-content: center;
-      min-height: 100vh; padding: 1rem;
-    }
+    #login-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:1rem; }
     .login-card {
-      background: var(--surface); border-radius: 16px;
-      padding: 2.5rem 2rem; width: 100%; max-width: 380px;
-      box-shadow: 0 4px 24px rgba(0,0,0,.1);
+      background:var(--surface); border-radius:16px; padding:2.5rem 2rem;
+      width:100%; max-width:380px; box-shadow:0 4px 24px rgba(0,0,0,.1);
     }
-    .login-card h1 { text-align: center; margin-bottom: 1.5rem; font-size: 1.3rem; }
-    .login-card h1 span { display: block; font-size: 2rem; }
+    .login-card h1 { text-align:center; margin-bottom:1.5rem; font-size:1.3rem; }
+    .login-card h1 span { display:block; font-size:2rem; }
 
     /* ---- app ---- */
-    #app-screen { display: none; }
-
+    #app-screen { display:none; }
     header {
-      background: linear-gradient(135deg, var(--laranja), var(--laranja-dark));
-      color: white; padding: .9rem 1.5rem;
-      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      background:linear-gradient(135deg, var(--laranja), var(--laranja-dark));
+      color:white; padding:.9rem 1.5rem;
+      display:flex; align-items:center; justify-content:space-between; gap:1rem;
     }
-    header h2 { font-size: 1.1rem; }
-    .btn-sair { background: rgba(255,255,255,.2); color: white; border: none; cursor: pointer;
-      padding: .4rem .9rem; border-radius: 6px; font-size: .88rem; }
-
-    main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+    header h2 { font-size:1.1rem; }
+    .btn-sair { background:rgba(255,255,255,.2); color:white; border:none; cursor:pointer;
+      padding:.4rem .9rem; border-radius:6px; font-size:.88rem; }
+    main { max-width:1100px; margin:0 auto; padding:1.5rem 1rem 3rem; }
 
     /* tabs */
-    .tabs { display: flex; gap: .5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); }
+    .tabs { display:flex; gap:.5rem; margin-bottom:1.5rem; border-bottom:2px solid var(--border); flex-wrap:wrap; }
     .tab {
-      padding: .6rem 1.2rem; cursor: pointer; border-radius: 8px 8px 0 0;
-      font-size: .9rem; font-weight: 600; border: 2px solid transparent; border-bottom: none;
-      background: none; color: var(--muted); transition: all .15s;
+      padding:.6rem 1.2rem; cursor:pointer; border-radius:8px 8px 0 0;
+      font-size:.9rem; font-weight:600; border:2px solid transparent; border-bottom:none;
+      background:none; color:var(--muted); transition:all .15s;
     }
-    .tab.ativo { border-color: var(--border); border-bottom-color: var(--surface);
-      background: var(--surface); color: var(--laranja); }
-
-    .painel { display: none; }
-    .painel.ativo { display: block; }
+    .tab.ativo { border-color:var(--border); border-bottom-color:var(--surface);
+      background:var(--surface); color:var(--laranja); }
+    .painel { display:none; }
+    .painel.ativo { display:block; }
 
     /* alertas */
-    .alert { padding: .8rem 1.1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 500; }
-    .alert-ok  { background: var(--verde-bg); color: var(--verde); border-left: 4px solid var(--verde); }
-    .alert-err { background: var(--erro-bg);  color: var(--erro);  border-left: 4px solid var(--erro); }
+    .alert { padding:.8rem 1.1rem; border-radius:8px; margin-bottom:1rem; font-weight:500; }
+    .alert-ok  { background:var(--verde-bg); color:var(--verde); border-left:4px solid var(--verde); }
+    .alert-err { background:var(--erro-bg);  color:var(--erro);  border-left:4px solid var(--erro); }
 
     /* campos */
-    .campo { margin-bottom: 1rem; display: flex; flex-direction: column; gap: .35rem; }
-    .campo label { font-weight: 600; font-size: .88rem; }
+    .campo { margin-bottom:1rem; display:flex; flex-direction:column; gap:.35rem; }
+    .campo label { font-weight:600; font-size:.88rem; }
     .campo input, .campo select {
-      padding: .6rem .9rem; border: 1.5px solid var(--border); border-radius: 8px; font-size: .95rem; background: white;
+      padding:.6rem .9rem; border:1.5px solid var(--border); border-radius:8px; font-size:.95rem; background:white;
     }
-    .campo input:focus, .campo select:focus { outline: none; border-color: var(--laranja); }
+    .campo input:focus, .campo select:focus { outline:none; border-color:var(--laranja); }
 
     /* botões */
-    .btn {
-      display: inline-block; padding: .6rem 1.4rem; border-radius: 8px;
-      font-size: .95rem; font-weight: 600; cursor: pointer; border: none;
-      text-decoration: none; transition: opacity .15s;
-    }
-    .btn:hover { opacity: .85; }
-    .btn-laranja { background: var(--laranja); color: white; }
-    .btn-cinza   { background: var(--border);  color: var(--text); }
+    .btn { display:inline-block; padding:.6rem 1.4rem; border-radius:8px;
+      font-size:.95rem; font-weight:600; cursor:pointer; border:none; transition:opacity .15s; }
+    .btn:hover { opacity:.85; }
+    .btn-laranja { background:var(--laranja); color:white; }
+    .btn-cinza   { background:var(--border);  color:var(--text); }
+    .btn-sm      { padding:.35rem .8rem; font-size:.82rem; }
+    .btn-verde   { background:var(--verde); color:white; }
 
-    /* card form */
-    .card { background: var(--surface); border-radius: 12px;
-      padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
-    .card h3 { margin-bottom: 1.2rem; font-size: 1.05rem; color: var(--laranja); }
+    /* card */
+    .card { background:var(--surface); border-radius:12px; padding:1.5rem; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+    .card h3 { margin-bottom:1.2rem; font-size:1.05rem; color:var(--laranja); }
 
     /* lista participantes */
-    .lista-parts { display: flex; flex-direction: column; gap: .5rem; margin-top: 1rem; }
-    .part-item {
-      display: flex; align-items: center; gap: .8rem;
-      background: var(--bg); border-radius: 8px; padding: .6rem 1rem;
-      border: 1px solid var(--border);
-    }
-    .part-item .nome { font-weight: 600; flex: 1; }
-    .part-item .insta { font-size: .82rem; color: var(--muted); }
-    .btn-remover { background: var(--erro-bg); color: var(--erro); border: none; border-radius: 6px;
-      padding: .25rem .6rem; cursor: pointer; font-size: .82rem; }
+    .lista-parts { display:flex; flex-direction:column; gap:.5rem; margin-top:1rem; }
+    .part-item { display:flex; align-items:center; gap:.8rem;
+      background:var(--bg); border-radius:8px; padding:.6rem 1rem; border:1px solid var(--border); }
+    .part-item .nome { font-weight:600; flex:1; }
+    .part-item .insta { font-size:.82rem; color:var(--muted); }
+    .btn-remover { background:var(--erro-bg); color:var(--erro); border:none; border-radius:6px;
+      padding:.25rem .6rem; cursor:pointer; font-size:.82rem; }
 
     /* ---- tabela registro ---- */
-    .config-dia {
-      display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap;
-      margin-bottom: 1.2rem;
-    }
-    .config-dia .campo { margin-bottom: 0; }
-
-    .tabela-wrap { overflow-x: auto; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
-    table.reg { width: 100%; border-collapse: collapse; background: var(--surface); }
-    table.reg thead tr { background: var(--text); }
-    table.reg th {
-      color: white; padding: .7rem .9rem; text-align: left;
-      font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap;
-    }
-    table.reg td {
-      padding: .65rem .9rem; border-bottom: 1px solid var(--border);
-      font-size: .9rem; vertical-align: middle;
-    }
-    table.reg tbody tr:last-child td { border-bottom: none; }
-    table.reg tbody tr:hover td { background: #fdf3ec; }
-    table.reg .centro { text-align: center; }
-
-    table.reg input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--laranja); cursor: pointer; }
+    .config-dia { display:flex; align-items:flex-end; gap:1rem; flex-wrap:wrap; margin-bottom:1.2rem; }
+    .config-dia .campo { margin-bottom:0; }
+    .tabela-wrap { overflow-x:auto; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    table.reg { width:100%; border-collapse:collapse; background:var(--surface); }
+    table.reg thead tr { background:var(--text); }
+    table.reg th { color:white; padding:.7rem .9rem; text-align:left;
+      font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; white-space:nowrap; }
+    table.reg td { padding:.65rem .9rem; border-bottom:1px solid var(--border);
+      font-size:.9rem; vertical-align:middle; }
+    table.reg tbody tr:last-child td { border-bottom:none; }
+    table.reg tbody tr:hover td { background:#fdf3ec; }
+    table.reg .centro { text-align:center; }
+    table.reg input[type="checkbox"] { width:20px; height:20px; accent-color:var(--laranja); cursor:pointer; }
     table.reg input[type="number"] {
-      padding: .3rem .5rem; border: 1.5px solid var(--border); border-radius: 6px;
-      font-size: .9rem; text-align: center; width: 52px;
+      padding:.3rem .5rem; border:1.5px solid var(--border); border-radius:6px;
+      font-size:.9rem; text-align:center; width:52px;
     }
-    table.reg input[type="number"]:focus { outline: none; border-color: var(--laranja); }
-    .cardio-inputs { display: flex; align-items: center; gap: .2rem; justify-content: center; }
-    .cardio-inputs span { font-size: .82rem; color: var(--muted); }
+    table.reg input[type="number"]:focus { outline:none; border-color:var(--laranja); }
+    .cardio-inputs { display:flex; align-items:center; gap:.2rem; justify-content:center; }
+    .cardio-inputs span { font-size:.82rem; color:var(--muted); }
+    .pts-prev { color:var(--laranja); font-weight:700; font-size:1rem; }
+    .ja-tem   { background:#fff4ec !important; }
+    .ja-tem td { opacity:.85; }
+    .badge-existente { background:var(--laranja); color:white; font-size:.7rem; border-radius:10px;
+      padding:.15rem .5rem; margin-left:.4rem; vertical-align:middle; }
+    .badge-semana { display:inline-block; font-size:.7rem; font-weight:700;
+      background:var(--verde-bg); color:var(--verde); border-radius:10px; padding:.1rem .5rem; margin-bottom:.2rem; }
+    .badge-semana.cheio { background:var(--erro-bg); color:var(--erro); }
+    .registro-footer { margin-top:1.2rem; display:flex; justify-content:flex-end; gap:.8rem; align-items:center; }
+    .info-semana { font-size:.82rem; color:var(--muted); }
 
-    .pts-prev { color: var(--laranja); font-weight: 700; font-size: 1rem; }
-    .ja-tem   { background: #fff4ec !important; }
-    .ja-tem td { opacity: .75; }
-    .badge-existente {
-      background: var(--laranja); color: white; font-size: .7rem; border-radius: 10px;
-      padding: .15rem .5rem; margin-left: .4rem; vertical-align: middle;
+    /* ---- desafios ---- */
+    .desafio-item {
+      background:var(--surface); border:1px solid var(--border); border-radius:12px;
+      padding:1rem 1.2rem; margin-bottom:.8rem;
     }
-    .badge-semana {
-      display: inline-block; font-size: .7rem; font-weight: 700;
-      background: var(--verde-bg); color: var(--verde);
-      border-radius: 10px; padding: .1rem .5rem; margin-bottom: .2rem;
-    }
-    .badge-semana.cheio {
-      background: var(--erro-bg); color: var(--erro);
-    }
+    .desafio-item.ativo { border-color:var(--verde); border-width:2px; background:var(--verde-bg); }
+    .desafio-item .d-nome { font-weight:700; font-size:1rem; }
+    .desafio-item .d-meta { font-size:.82rem; color:var(--muted); margin-top:.2rem; }
+    .status-badge { display:inline-block; border-radius:20px; padding:.15rem .6rem;
+      font-size:.72rem; font-weight:700; margin-left:.5rem; vertical-align:middle; }
+    .sem-desafio { text-align:center; padding:2.5rem 1rem; color:var(--muted); }
+    .sem-desafio strong { display:block; font-size:1.1rem; margin-bottom:.5rem; color:var(--text); }
 
-    .registro-footer {
-      margin-top: 1.2rem; display: flex; justify-content: flex-end; gap: .8rem; align-items: center;
-    }
-    .info-semana { font-size: .82rem; color: var(--muted); }
+    /* form desafio */
+    #form-desafio-wrap { margin-top:1.5rem; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.8rem; }
+    .section-title { font-weight:700; font-size:.95rem; margin:1.2rem 0 .6rem;
+      padding-bottom:.35rem; border-bottom:1px solid var(--border); }
+    table.small { width:100%; border-collapse:collapse; font-size:.88rem; }
+    table.small th { text-align:left; padding:.4rem .6rem; color:var(--muted);
+      font-weight:600; font-size:.78rem; border-bottom:1px solid var(--border); }
+    table.small td { padding:.4rem .6rem; border-bottom:1px solid var(--border); }
+    table.small input[type="number"] { width:60px; padding:.25rem .4rem; text-align:center;
+      border:1.5px solid var(--border); border-radius:6px; font-size:.88rem; }
+    table.small input[type="number"]:focus { outline:none; border-color:var(--laranja); }
+    .btn-add-faixa { font-size:.82rem; padding:.3rem .7rem; margin-top:.5rem; }
 
     /* spinner */
-    .spinner { display: inline-block; width: 16px; height: 16px;
-      border: 2px solid #fff; border-top-color: transparent;
-      border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: .4rem; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { display:inline-block; width:16px; height:16px; border:2px solid #fff;
+      border-top-color:transparent; border-radius:50%; animation:spin .6s linear infinite;
+      vertical-align:middle; margin-right:.4rem; }
+    @keyframes spin { to { transform:rotate(360deg); } }
 
     /* ---- mobile: cards de registro ---- */
-    .cards-reg-mobile { display: none; flex-direction: column; gap: .8rem; }
-    .reg-card {
-      background: var(--surface); border-radius: 12px;
-      padding: 1rem 1.1rem; border: 1px solid var(--border);
-      box-shadow: 0 1px 6px rgba(0,0,0,.05);
-    }
-    .reg-card.ja-tem { background: #fff4ec; border-color: var(--laranja); }
-    .reg-card .rc-nome {
-      font-weight: 700; font-size: 1rem; margin-bottom: .8rem;
-      display: flex; align-items: center; gap: .4rem; flex-wrap: wrap;
-    }
-    .reg-card .rc-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: .45rem 0; border-bottom: 1px solid var(--border);
-    }
-    .reg-card .rc-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .reg-card .rc-label { font-size: .88rem; color: var(--text); flex: 1; }
-    .reg-card .rc-ctrl  { display: flex; align-items: center; gap: .5rem; }
-    .reg-card input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--laranja); }
-    .reg-card input[type="number"] {
-      padding: .3rem .4rem; border: 1.5px solid var(--border); border-radius: 6px;
-      font-size: .9rem; text-align: center; width: 56px;
-    }
-    .reg-card input[type="number"]:focus { outline: none; border-color: var(--laranja); }
-    .reg-card .rc-pts { font-weight: 700; color: var(--laranja); font-size: 1rem; }
-    .reg-card .rc-limite { font-size: .75rem; color: var(--erro); }
+    .cards-reg-mobile { display:none; flex-direction:column; gap:.8rem; }
+    .reg-card { background:var(--surface); border-radius:12px; padding:1rem 1.1rem;
+      border:1px solid var(--border); box-shadow:0 1px 6px rgba(0,0,0,.05); }
+    .reg-card.ja-tem { background:#fff4ec; border-color:var(--laranja); }
+    .reg-card .rc-nome { font-weight:700; font-size:1rem; margin-bottom:.8rem;
+      display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; }
+    .reg-card .rc-row { display:flex; align-items:center; justify-content:space-between;
+      padding:.45rem 0; border-bottom:1px solid var(--border); }
+    .reg-card .rc-row:last-child { border-bottom:none; padding-bottom:0; }
+    .reg-card .rc-label { font-size:.88rem; color:var(--text); flex:1; }
+    .reg-card .rc-ctrl  { display:flex; align-items:center; gap:.5rem; }
+    .reg-card input[type="checkbox"] { width:22px; height:22px; accent-color:var(--laranja); }
+    .reg-card input[type="number"] { padding:.3rem .4rem; border:1.5px solid var(--border);
+      border-radius:6px; font-size:.9rem; text-align:center; width:56px; }
+    .reg-card .rc-pts { font-weight:700; color:var(--laranja); font-size:1rem; }
+    .reg-card .rc-limite { font-size:.75rem; color:var(--erro); }
 
-    @media (max-width: 700px) {
-      .tabela-wrap { display: none; }
-      .cards-reg-mobile { display: flex; }
-      .config-dia { flex-direction: column; align-items: stretch; }
-      .registro-footer { flex-direction: column; gap: .5rem; }
-      .registro-footer .btn { width: 100%; text-align: center; }
+    @media (max-width:700px) {
+      .tabela-wrap { display:none; }
+      .cards-reg-mobile { display:flex; }
+      .config-dia { flex-direction:column; align-items:stretch; }
+      .registro-footer { flex-direction:column; gap:.5rem; }
+      .registro-footer .btn { width:100%; text-align:center; }
+      .grid-2, .grid-3 { grid-template-columns:1fr; }
     }
-    @media (max-width: 640px) {
-      div[style*="grid-template-columns:1fr 1fr"] {
-        grid-template-columns: 1fr !important;
-      }
+    @media (max-width:640px) {
+      div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns:1fr !important; }
     }
   </style>
 </head>
@@ -217,7 +202,7 @@
 <!-- ============ APP ============ -->
 <div id="app-screen">
   <header>
-    <h2>🏋️ Admin · Desafio Nanda Carvalho</h2>
+    <h2>🏋️ Admin · <span id="header-desafio-nome">Desafio Nanda Carvalho</span></h2>
     <button class="btn-sair" id="btn-sair">Sair</button>
   </header>
 
@@ -227,50 +212,60 @@
     <div class="tabs">
       <button class="tab ativo" data-tab="registrar">Registrar Dia</button>
       <button class="tab" data-tab="participantes">Participantes</button>
+      <button class="tab" data-tab="desafios">⚙️ Desafios</button>
     </div>
 
     <!-- ===== PAINEL: REGISTRAR ===== -->
     <div class="painel ativo" id="painel-registrar">
-      <div class="config-dia">
-        <div class="campo">
-          <label for="sel-data">Data</label>
-          <select id="sel-data"></select>
+      <div id="sem-desafio-registrar" class="sem-desafio" style="display:none">
+        <strong>Nenhum desafio ativo</strong>
+        Vá à aba <strong>⚙️ Desafios</strong> para criar e ativar um desafio.
+      </div>
+      <div id="conteudo-registrar">
+        <div class="config-dia">
+          <div class="campo">
+            <label for="sel-data">Data</label>
+            <select id="sel-data"></select>
+          </div>
+          <div class="info-semana" id="info-semana"></div>
         </div>
-        <div class="info-semana" id="info-semana"></div>
-      </div>
 
-      <div id="aviso-sem-parts" class="alert alert-err" style="display:none">
-        Nenhum participante cadastrado. Vá à aba <strong>Participantes</strong> para adicionar.
-      </div>
+        <div id="aviso-sem-parts" class="alert alert-err" style="display:none">
+          Nenhum participante cadastrado. Vá à aba <strong>Participantes</strong> para adicionar.
+        </div>
 
-      <div class="cards-reg-mobile" id="cards-reg-mobile"></div>
+        <div class="cards-reg-mobile" id="cards-reg-mobile"></div>
 
-      <div class="tabela-wrap">
-        <table class="reg" id="tabela-reg">
-          <thead>
-            <tr>
-              <th>Participante</th>
-              <th class="centro" title="+20 pts · máx 6x/semana">Musculação<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
-              <th class="centro" title="máx 6x/semana">Cardio (min:seg)<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
-              <th class="centro" title="+5 pts · máx 1x/semana">At. Coletiva<br><small style="font-weight:400;opacity:.7">máx 1/sem</small></th>
-              <th class="centro" title="+2 pts · máx 6x/semana">Post Insta<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
-              <th class="centro">Pts</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-reg"></tbody>
-        </table>
-      </div>
+        <div class="tabela-wrap">
+          <table class="reg" id="tabela-reg">
+            <thead>
+              <tr>
+                <th>Participante</th>
+                <th class="centro" id="th-musculacao">Musculação<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
+                <th class="centro">Cardio (min:seg)<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
+                <th class="centro">At. Coletiva<br><small style="font-weight:400;opacity:.7">máx 1/sem</small></th>
+                <th class="centro">Post Insta<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
+                <th class="centro">Pts</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-reg"></tbody>
+          </table>
+        </div>
 
-      <div class="registro-footer">
-        <span id="txt-checkins" class="info-semana"></span>
-        <button class="btn btn-laranja" id="btn-salvar">Salvar todos</button>
+        <div class="registro-footer">
+          <span id="txt-checkins" class="info-semana"></span>
+          <button class="btn btn-laranja" id="btn-salvar">Salvar todos</button>
+        </div>
       </div>
     </div>
 
     <!-- ===== PAINEL: PARTICIPANTES ===== -->
     <div class="painel" id="painel-participantes">
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; flex-wrap:wrap">
-
+      <div id="sem-desafio-participantes" class="sem-desafio" style="display:none">
+        <strong>Nenhum desafio ativo</strong>
+        Vá à aba <strong>⚙️ Desafios</strong> para criar e ativar um desafio.
+      </div>
+      <div id="conteudo-participantes" style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start">
         <div class="card">
           <h3>Adicionar Participante</h3>
           <form id="form-part">
@@ -289,10 +284,83 @@
             <button type="submit" class="btn btn-laranja">Cadastrar</button>
           </form>
         </div>
-
         <div class="card">
           <h3>Participantes cadastrados</h3>
           <div id="lista-participantes"><p style="color:var(--muted)">Carregando…</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAINEL: DESAFIOS ===== -->
+    <div class="painel" id="painel-desafios">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; flex-wrap:wrap; gap:.5rem">
+        <h3 style="font-size:1.05rem; color:var(--laranja)">Desafios cadastrados</h3>
+        <button class="btn btn-laranja" id="btn-novo-desafio">+ Novo desafio</button>
+      </div>
+      <div id="lista-desafios-items"></div>
+
+      <!-- Formulário criar/editar desafio -->
+      <div id="form-desafio-wrap" style="display:none; margin-top:1.5rem">
+        <div class="card">
+          <h3 id="form-desafio-titulo">Novo Desafio</h3>
+
+          <div class="grid-2">
+            <div class="campo">
+              <label>Nome do desafio</label>
+              <input type="text" id="d-nome" placeholder="Ex.: 4º Desafio Nanda Carvalho">
+            </div>
+            <div class="campo">
+              <label>Número</label>
+              <input type="number" id="d-num" min="1" placeholder="4">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="campo">
+              <label>Data de início</label>
+              <input type="date" id="d-inicio">
+            </div>
+            <div class="campo">
+              <label>Data de fim</label>
+              <input type="date" id="d-fim">
+            </div>
+          </div>
+          <button class="btn btn-cinza btn-sm" id="btn-gerar-semanas" style="margin-bottom:1.2rem">
+            🗓 Gerar semanas automaticamente
+          </button>
+
+          <div class="section-title">Pontuação</div>
+          <div class="grid-3">
+            <div class="campo">
+              <label>Musculação (pts)</label>
+              <input type="number" id="d-pts-musc" value="20" min="0">
+            </div>
+            <div class="campo">
+              <label>Coletiva (pts)</label>
+              <input type="number" id="d-pts-cole" value="5" min="0">
+            </div>
+            <div class="campo">
+              <label>Post Insta (pts)</label>
+              <input type="number" id="d-pts-post" value="2" min="0">
+            </div>
+          </div>
+
+          <div class="section-title">Faixas de cardio</div>
+          <table class="small" id="tabela-faixas">
+            <thead><tr><th>A partir de (min)</th><th>Pontos</th><th></th></tr></thead>
+            <tbody id="tbody-faixas"></tbody>
+          </table>
+          <button class="btn btn-cinza btn-sm btn-add-faixa" id="btn-add-faixa">+ Adicionar faixa</button>
+
+          <div class="section-title">Semanas e limites de check-in</div>
+          <table class="small">
+            <thead><tr><th>Semana</th><th>Período</th><th>Máx check-ins</th></tr></thead>
+            <tbody id="tbody-semanas"></tbody>
+          </table>
+
+          <div style="display:flex; gap:.8rem; margin-top:1.5rem; flex-wrap:wrap">
+            <button class="btn btn-laranja" id="btn-salvar-desafio">Salvar desafio</button>
+            <button class="btn btn-cinza" id="btn-cancelar-desafio">Cancelar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -311,7 +379,6 @@ import {
   onSnapshot, query, where, getDocs
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-// ---- CONFIG Firebase — substitua pelos dados do seu projeto ----
 const cfg = {
   apiKey:            "AIzaSyBSjjzFOSxk3DVbDbyHHLP3mFsLETDMxdo",
   authDomain:        "nanda-carvalho-personal.firebaseapp.com",
@@ -320,47 +387,49 @@ const cfg = {
   messagingSenderId: "206265275427",
   appId:             "1:206265275427:web:28978b0c8940f4280d0d96"
 };
-
 const app  = initializeApp(cfg);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-// ---- PONTUAÇÃO ----
+// ---- ESTADO ----
+let desafioAtivo   = null;
+let desafioAtivoId = null;
+let todosDesafios  = [];
+let participantes  = {};
+let registrosDia   = {};
+let contagemSemana = {};
+
+// ---- PONTUAÇÃO DINÂMICA ----
 function ptsCardio(min) {
-  if (min >= 50) return 5; if (min >= 40) return 4;
-  if (min >= 30) return 3; if (min >= 20) return 2; return 0;
+  const faixas = desafioAtivo?.pontuacao?.cardio_faixas || [];
+  let pts = 0;
+  for (const f of faixas) if (min >= f.de) pts = f.pts;
+  return pts;
 }
 function calcPontos(r) {
-  return (r.musculacao?20:0) + ptsCardio(r.cardio_minutos||0) + (r.atividade_coletiva?5:0) + (r.post_insta?2:0);
+  const p = desafioAtivo?.pontuacao || { musculacao:20, coletiva:5, post_insta:2 };
+  return (r.musculacao ? (p.musculacao??20) : 0)
+       + ptsCardio(r.cardio_minutos||0)
+       + (r.atividade_coletiva ? (p.coletiva??5) : 0)
+       + (r.post_insta ? (p.post_insta??2) : 0);
 }
 function fmtMmSs(seg) {
   const m = Math.floor(seg/60), s = seg%60;
   return `${m}:${String(s).padStart(2,'0')}`;
 }
-
-// ---- DATAS DO DESAFIO ----
-const SEMANAS = [
-  {num:1,inicio:"2026-11-23",fim:"2026-11-29",max:6},
-  {num:2,inicio:"2026-11-30",fim:"2026-12-06",max:6},
-  {num:3,inicio:"2026-12-07",fim:"2026-12-13",max:6},
-  {num:4,inicio:"2026-12-14",fim:"2026-12-18",max:5},
-];
-function semanaDeData(d) { return SEMANAS.find(s => d >= s.inicio && d <= s.fim) || null; }
-
+function semanaDeData(d) {
+  return (desafioAtivo?.semanas||[]).find(s => d >= s.inicio && d <= s.fim) || null;
+}
 function datasDesafio() {
-  const out = []; let cur = new Date("2026-11-23T12:00:00");
-  const fim = new Date("2026-12-18T12:00:00");
+  if (!desafioAtivo) return [];
+  const out = []; let cur = new Date(desafioAtivo.inicio+"T12:00:00");
+  const fim = new Date(desafioAtivo.fim+"T12:00:00");
   while (cur <= fim) { out.push(cur.toISOString().slice(0,10)); cur.setDate(cur.getDate()+1); }
   return out;
 }
 const DIAS_SEMANA = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 function fmtData(d) { const [y,m,dd]=d.split("-"); return `${dd}/${m}/${y}`; }
-function diaSem(d) { return DIAS_SEMANA[new Date(d+"T12:00:00").getDay()]; }
-
-// ---- estado ----
-let participantes  = {};  // { id: { nome, instagram, gymratsUser } }
-let registrosDia   = {};  // { participanteId: {id, ...dados} }
-let contagemSemana = {};  // { participanteId: {musculacao, cardio, post_insta, coletiva} }
+function diaSem(d)  { return DIAS_SEMANA[new Date(d+"T12:00:00").getDay()]; }
 
 // ---- UTILS UI ----
 function flash(msg, ok=true, el=document.getElementById("msg-global")) {
@@ -378,15 +447,12 @@ document.getElementById("form-login").addEventListener("submit", async e => {
       document.getElementById("login-email").value,
       document.getElementById("login-senha").value
     );
-  } catch (err) {
-    const msgEl = document.getElementById("msg-login");
-    flash("E-mail ou senha incorretos.", false, msgEl);
+  } catch {
+    flash("E-mail ou senha incorretos.", false, document.getElementById("msg-login"));
     btn.innerHTML = "Entrar"; btn.disabled = false;
   }
 });
-
 document.getElementById("btn-sair").addEventListener("click", () => signOut(auth));
-
 onAuthStateChanged(auth, user => {
   document.getElementById("login-screen").style.display = user ? "none" : "flex";
   document.getElementById("app-screen").style.display   = user ? "block" : "none";
@@ -404,16 +470,243 @@ document.querySelectorAll(".tab").forEach(tab => {
 
 // ---- INICIAR APP ----
 function iniciarApp() {
-  popularSelectDatas();
-  escutarParticipantes();
-
+  escutarDesafios();
   document.getElementById("sel-data").addEventListener("change", carregarRegistrosDoDia);
   document.getElementById("btn-salvar").addEventListener("click", salvarTodos);
   document.getElementById("form-part").addEventListener("submit", adicionarParticipante);
+  document.getElementById("btn-novo-desafio").addEventListener("click", () => abrirFormDesafio());
+  document.getElementById("btn-gerar-semanas").addEventListener("click", gerarSemanasAuto);
+  document.getElementById("btn-add-faixa").addEventListener("click", () => {
+    faixasTemp.push({ de: 60, pts: 6 }); renderizarFaixas();
+  });
+  document.getElementById("btn-salvar-desafio").addEventListener("click", salvarDesafio);
+  document.getElementById("btn-cancelar-desafio").addEventListener("click", () => {
+    document.getElementById("form-desafio-wrap").style.display = "none";
+  });
 }
 
+// ===== DESAFIOS =====
+let editandoDesafioId = null;
+let semanasTemp = [];
+let faixasTemp  = [];
+
+function escutarDesafios() {
+  onSnapshot(collection(db, "desafios"), snap => {
+    todosDesafios = [];
+    snap.forEach(d => { todosDesafios.push({ id: d.id, ...d.data() }); });
+    todosDesafios.sort((a,b) => (b.numero||0)-(a.numero||0));
+
+    const ativo = todosDesafios.find(d => d.ativo) || null;
+    const idAnterior = desafioAtivoId;
+    desafioAtivo   = ativo;
+    desafioAtivoId = ativo?.id || null;
+
+    document.getElementById("header-desafio-nome").textContent =
+      ativo ? ativo.nome : "Desafio Nanda Carvalho";
+
+    // atualiza estado das abas
+    const temAtivo = !!ativo;
+    document.getElementById("sem-desafio-registrar").style.display    = temAtivo ? "none" : "block";
+    document.getElementById("conteudo-registrar").style.display        = temAtivo ? "block" : "none";
+    document.getElementById("sem-desafio-participantes").style.display = temAtivo ? "none" : "block";
+    document.getElementById("conteudo-participantes").style.display    = temAtivo ? "grid" : "none";
+
+    if (ativo?.id !== idAnterior) {
+      popularSelectDatas();
+      escutarParticipantes();
+    }
+    renderizarListaDesafios();
+  });
+}
+
+function renderizarListaDesafios() {
+  const el = document.getElementById("lista-desafios-items");
+  if (!todosDesafios.length) {
+    el.innerHTML = `<p style="color:var(--muted);padding:.5rem 0">Nenhum desafio cadastrado ainda. Clique em "+ Novo desafio".</p>`;
+    return;
+  }
+  const hoje = new Date().toISOString().slice(0,10);
+  el.innerHTML = todosDesafios.map(d => {
+    const status = d.ativo ? "ativo"
+      : (d.fim && d.fim < hoje ? "encerrado" : "futuro");
+    const corMap = { ativo:["var(--verde)","var(--verde-bg)"], encerrado:["var(--muted)","#f0f0f0"], futuro:["var(--laranja)","#fff4ec"] };
+    const [cor, bg] = corMap[status];
+    const ptsMusc = d.pontuacao?.musculacao ?? 20;
+    const ptsCole = d.pontuacao?.coletiva   ?? 5;
+    const ptsPo   = d.pontuacao?.post_insta ?? 2;
+    return `
+      <div class="desafio-item${d.ativo?" ativo":""}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+          <div>
+            <span class="d-nome">${d.nome||"Sem nome"}</span>
+            <span class="status-badge" style="background:${bg};color:${cor}">${status}</span>
+            <div class="d-meta">${d.inicio?fmtData(d.inicio):""} → ${d.fim?fmtData(d.fim):""} · Musculação ${ptsMusc}pts · Coletiva ${ptsCole}pts · Post ${ptsPo}pts</div>
+          </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+            ${!d.ativo ? `<button class="btn btn-verde btn-sm" onclick="ativarDesafio('${d.id}')">▶ Ativar</button>` : ""}
+            <button class="btn btn-cinza btn-sm" onclick="abrirFormDesafioById('${d.id}')">Editar</button>
+          </div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function abrirFormDesafioById(id) {
+  const d = todosDesafios.find(x => x.id === id);
+  if (d) abrirFormDesafio(d);
+}
+
+function abrirFormDesafio(desafio = null) {
+  editandoDesafioId = desafio?.id || null;
+  document.getElementById("form-desafio-titulo").textContent = desafio ? "Editar Desafio" : "Novo Desafio";
+  document.getElementById("form-desafio-wrap").style.display = "block";
+  document.getElementById("form-desafio-wrap").scrollIntoView({ behavior:"smooth", block:"start" });
+
+  const maxNum = todosDesafios.length ? Math.max(...todosDesafios.map(d=>d.numero||0)) : 0;
+  document.getElementById("d-nome").value    = desafio?.nome    || "";
+  document.getElementById("d-num").value     = desafio?.numero  || (maxNum + 1);
+  document.getElementById("d-inicio").value  = desafio?.inicio  || "";
+  document.getElementById("d-fim").value     = desafio?.fim     || "";
+  document.getElementById("d-pts-musc").value= desafio?.pontuacao?.musculacao  ?? 20;
+  document.getElementById("d-pts-cole").value= desafio?.pontuacao?.coletiva    ?? 5;
+  document.getElementById("d-pts-post").value= desafio?.pontuacao?.post_insta  ?? 2;
+
+  faixasTemp  = JSON.parse(JSON.stringify(
+    desafio?.pontuacao?.cardio_faixas || [{de:20,pts:2},{de:30,pts:3},{de:40,pts:4},{de:50,pts:5}]
+  ));
+  semanasTemp = JSON.parse(JSON.stringify(desafio?.semanas || []));
+  renderizarFaixas();
+  renderizarSemanas();
+}
+
+function gerarSemanasAuto() {
+  const inicio = document.getElementById("d-inicio").value;
+  const fim    = document.getElementById("d-fim").value;
+  if (!inicio || !fim) { flash("Preencha as datas de início e fim primeiro.", false); return; }
+  semanasTemp = [];
+  let cur = new Date(inicio+"T12:00:00");
+  const fimDate = new Date(fim+"T12:00:00");
+  let num = 1;
+  while (cur <= fimDate) {
+    const semInicio = cur.toISOString().slice(0,10);
+    const nextCur = new Date(cur); nextCur.setDate(nextCur.getDate()+6);
+    const semFim = nextCur > fimDate ? new Date(fimDate) : nextCur;
+    const dias = Math.round((semFim-cur)/86400000)+1;
+    semanasTemp.push({ num, inicio: semInicio, fim: semFim.toISOString().slice(0,10), max: dias < 7 ? 5 : 6 });
+    cur.setDate(cur.getDate()+7);
+    num++;
+  }
+  renderizarSemanas();
+}
+
+function renderizarFaixas() {
+  document.getElementById("tbody-faixas").innerHTML = faixasTemp.map((f,i) => `
+    <tr>
+      <td><input type="number" min="0" max="300" value="${f.de}"
+        onchange="faixasTemp[${i}].de=+this.value"> min</td>
+      <td><input type="number" min="0" max="99" value="${f.pts}"
+        onchange="faixasTemp[${i}].pts=+this.value"> pts</td>
+      <td><button style="background:var(--erro-bg);color:var(--erro);border:none;border-radius:6px;padding:.2rem .5rem;cursor:pointer"
+        onclick="faixasTemp.splice(${i},1);renderizarFaixas()">✕</button></td>
+    </tr>`).join("");
+}
+
+function renderizarSemanas() {
+  const tbody = document.getElementById("tbody-semanas");
+  if (!semanasTemp.length) {
+    tbody.innerHTML = `<tr><td colspan="3" style="color:var(--muted);font-size:.82rem;padding:.5rem">
+      Preencha as datas e clique em "Gerar semanas automaticamente".</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = semanasTemp.map((s,i) => `
+    <tr>
+      <td>${s.num}ª semana</td>
+      <td>${fmtData(s.inicio)} → ${fmtData(s.fim)}</td>
+      <td><input type="number" min="1" max="7" value="${s.max}"
+        onchange="semanasTemp[${i}].max=+this.value"> /semana</td>
+    </tr>`).join("");
+}
+
+async function salvarDesafio() {
+  const nome  = document.getElementById("d-nome").value.trim();
+  const num   = parseInt(document.getElementById("d-num").value) || 1;
+  const inicio= document.getElementById("d-inicio").value;
+  const fim   = document.getElementById("d-fim").value;
+  const ptsMu = parseInt(document.getElementById("d-pts-musc").value) ?? 20;
+  const ptsCo = parseInt(document.getElementById("d-pts-cole").value) ?? 5;
+  const ptsPo = parseInt(document.getElementById("d-pts-post").value) ?? 2;
+
+  if (!nome)  { flash("Informe o nome do desafio.", false); return; }
+  if (!inicio||!fim) { flash("Informe as datas de início e fim.", false); return; }
+  if (!semanasTemp.length) { flash("Clique em 'Gerar semanas automaticamente'.", false); return; }
+
+  const dados = {
+    nome, numero: num, inicio, fim, ativo: false,
+    pontuacao: { musculacao: ptsMu, coletiva: ptsCo, post_insta: ptsPo, cardio_faixas: faixasTemp },
+    semanas: semanasTemp,
+  };
+
+  if (editandoDesafioId) {
+    await setDoc(doc(db,"desafios",editandoDesafioId), dados, { merge: true });
+    flash("Desafio atualizado!");
+  } else {
+    await addDoc(collection(db,"desafios"), dados);
+    flash("Desafio criado! Clique em 'Ativar' para colocá-lo em vigor.");
+  }
+  document.getElementById("form-desafio-wrap").style.display = "none";
+}
+
+async function ativarDesafio(id) {
+  if (!confirm("Ativar este desafio? O desafio atualmente ativo será desativado.")) return;
+  await Promise.all(todosDesafios.map(d =>
+    setDoc(doc(db,"desafios",d.id), { ativo: d.id === id }, { merge: true })
+  ));
+  flash("Desafio ativado com sucesso!");
+}
+
+// ===== PARTICIPANTES =====
+let unsubParticipantes = null;
+
+function escutarParticipantes() {
+  if (unsubParticipantes) unsubParticipantes();
+  unsubParticipantes = onSnapshot(collection(db,"participantes"), snap => {
+    participantes = {};
+    snap.forEach(d => {
+      const data = d.data();
+      // inclui se pertence ao desafio ativo OU não tem desafioId (retrocompat)
+      if (!desafioAtivoId || !data.desafioId || data.desafioId === desafioAtivoId) {
+        participantes[d.id] = data;
+      }
+    });
+    renderizarListaParticipantes();
+    renderizarTabelaRegistro();
+  });
+}
+
+function renderizarListaParticipantes() {
+  const lista = document.getElementById("lista-participantes");
+  const parts = Object.entries(participantes);
+  if (!parts.length) { lista.innerHTML = "<p style='color:var(--muted)'>Nenhum participante ainda.</p>"; return; }
+  lista.innerHTML = `<div class="lista-parts">` +
+    parts.map(([id, p]) => `
+      <div class="part-item">
+        <div>
+          <div class="nome">${p.nome}</div>
+          <div class="insta">${p.instagram?"@"+p.instagram:""}${p.gymratsUser?" · "+p.gymratsUser:""}</div>
+        </div>
+        <button class="btn-remover" data-id="${id}">✕</button>
+      </div>`).join("") +
+  `</div>`;
+  lista.querySelectorAll(".btn-remover").forEach(btn => {
+    btn.addEventListener("click", () => removerParticipante(btn.dataset.id));
+  });
+}
+
+// ===== REGISTRAR DIA =====
 function popularSelectDatas() {
   const sel = document.getElementById("sel-data");
+  sel.innerHTML = "";
+  if (!desafioAtivo) return;
   const hoje = new Date().toISOString().slice(0,10);
   datasDesafio().forEach(d => {
     const opt = document.createElement("option");
@@ -433,64 +726,35 @@ function atualizarInfoSemana() {
     sem ? `Semana ${sem.num} · máx ${sem.max} check-ins` : "";
 }
 
-// ---- ESCUTAR PARTICIPANTES (tempo real) ----
-function escutarParticipantes() {
-  onSnapshot(collection(db, "participantes"), snap => {
-    participantes = {};
-    snap.forEach(d => { participantes[d.id] = d.data(); });
-    renderizarListaParticipantes();
-    renderizarTabelaRegistro();
-  });
-}
-
-function renderizarListaParticipantes() {
-  const lista = document.getElementById("lista-participantes");
-  const parts = Object.entries(participantes);
-  if (!parts.length) { lista.innerHTML = "<p style='color:var(--muted)'>Nenhum participante ainda.</p>"; return; }
-  lista.innerHTML = `<div class="lista-parts">` +
-    parts.map(([id, p]) => `
-      <div class="part-item">
-        <div>
-          <div class="nome">${p.nome}</div>
-          <div class="insta">${p.instagram ? "@"+p.instagram : ""}${p.gymratsUser ? " · "+p.gymratsUser : ""}</div>
-        </div>
-        <button class="btn-remover" data-id="${id}">✕</button>
-      </div>
-    `).join("") +
-  `</div>`;
-
-  lista.querySelectorAll(".btn-remover").forEach(btn => {
-    btn.addEventListener("click", () => removerParticipante(btn.dataset.id));
-  });
-}
-
-// ---- TABELA DE REGISTRO ----
 async function carregarRegistrosDoDia() {
+  if (!desafioAtivo) return;
   atualizarInfoSemana();
   const data = document.getElementById("sel-data").value;
   const sem  = semanaDeData(data);
 
-  // carrega registros do dia
   registrosDia = {};
   const snapDia = await getDocs(query(collection(db,"registros"), where("data","==",data)));
-  snapDia.forEach(d => { registrosDia[d.data().participanteId] = { id: d.id, ...d.data() }; });
+  snapDia.forEach(d => {
+    const r = d.data();
+    // filtra por desafio (retrocompat: inclui sem desafioId)
+    if (!r.desafioId || r.desafioId === desafioAtivoId) {
+      registrosDia[r.participanteId] = { id: d.id, ...r };
+    }
+  });
 
-  // carrega contagem da semana inteira (excluindo o dia atual para não contar duas vezes)
   contagemSemana = {};
   if (sem) {
-    const snapSem = await getDocs(
-      query(collection(db,"registros"),
-        where("data",">=",sem.inicio),
-        where("data","<=",sem.fim)
-      )
-    );
+    const snapSem = await getDocs(query(collection(db,"registros"),
+      where("data",">=",sem.inicio), where("data","<=",sem.fim)));
     snapSem.forEach(d => {
       const r = d.data();
-      if (r.data === data) return; // ignora o dia atual
+      if (r.data === data) return;
+      if (r.desafioId && r.desafioId !== desafioAtivoId) return;
       const pid = r.participanteId;
       if (!contagemSemana[pid]) contagemSemana[pid] = {musculacao:0,cardio:0,post_insta:0,coletiva:0};
-      if (r.musculacao)                                                       contagemSemana[pid].musculacao++;
-      if ((r.cardio_segundos != null ? r.cardio_segundos : (r.cardio_minutos||0)*60) > 0) contagemSemana[pid].cardio++;
+      if (r.musculacao) contagemSemana[pid].musculacao++;
+      const seg = r.cardio_segundos != null ? r.cardio_segundos : (r.cardio_minutos||0)*60;
+      if (seg > 0) contagemSemana[pid].cardio++;
       if (r.post_insta)         contagemSemana[pid].post_insta++;
       if (r.atividade_coletiva) contagemSemana[pid].coletiva++;
     });
@@ -514,70 +778,56 @@ function renderizarTabelaRegistro() {
     const rSeg = existente
       ? (existente.cardio_segundos != null ? existente.cardio_segundos : (existente.cardio_minutos||0)*60)
       : 0;
-    const r  = existente || { musculacao:false, cardio_minutos:0, atividade_coletiva:false, post_insta:false };
-    const ct = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
+    const r   = existente || { musculacao:false, atividade_coletiva:false, post_insta:false };
+    const ct  = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
 
-    // limites: se já tem registro do dia, aquela unidade já estava contada → não bloqueia edição
-    // se não tem registro do dia, verifica se a semana já está cheia
-    const bloqMusc    = !existente && ct.musculacao    >= MAX6;
-    const bloqCardio  = !existente && ct.cardio        >= MAX6;
-    const bloqPost    = !existente && ct.post_insta    >= MAX6;
-    const bloqColetiva= !existente && ct.coletiva      >= 1;
+    const bloqMusc = !existente && ct.musculacao  >= MAX6;
+    const bloqCard = !existente && ct.cardio      >= MAX6;
+    const bloqPost = !existente && ct.post_insta  >= MAX6;
+    const bloqCole = !existente && ct.coletiva    >= 1;
 
     function cellChk(name, checked, bloq, usado, maximo) {
-      const semBadge = `<span class="badge-semana ${bloq?'cheio':''}">${usado}/${maximo}</span>`;
-      if (bloq) {
-        return `<td class="centro">${semBadge}<br><span style="font-size:.75rem;color:var(--erro)">limite atingido</span></td>`;
-      }
-      return `<td class="centro">${semBadge}<br><input type="checkbox" class="chk" name="${name}" ${checked?"checked":""}></td>`;
+      const badge = `<span class="badge-semana ${bloq?'cheio':''}">${usado}/${maximo}</span>`;
+      if (bloq) return `<td class="centro">${badge}<br><span style="font-size:.75rem;color:var(--erro)">limite</span></td>`;
+      return `<td class="centro">${badge}<br><input type="checkbox" class="chk" name="${name}" ${checked?"checked":""}></td>`;
     }
-
     function cellCardio(totalSeg, bloq, usado, maximo) {
-      const semBadge = `<span class="badge-semana ${bloq?'cheio':''}">${usado}/${maximo}</span>`;
-      const minVal = Math.floor(totalSeg/60), segVal = totalSeg%60;
-      if (bloq) {
-        return `<td class="centro">${semBadge}<br><span style="font-size:.75rem;color:var(--erro)">limite atingido</span></td>`;
-      }
-      return `<td class="centro">${semBadge}<br>
+      const badge = `<span class="badge-semana ${bloq?'cheio':''}">${usado}/${maximo}</span>`;
+      const minV = Math.floor(totalSeg/60), segV = totalSeg%60;
+      if (bloq) return `<td class="centro">${badge}<br><span style="font-size:.75rem;color:var(--erro)">limite</span></td>`;
+      return `<td class="centro">${badge}<br>
         <div class="cardio-inputs">
-          <input type="number" class="num-cardio-min" min="0" max="300" value="${minVal}" title="minutos">
+          <input type="number" class="num-cardio-min" min="0" max="300" value="${minV}">
           <span>:</span>
-          <input type="number" class="num-cardio-seg" min="0" max="59" value="${segVal}" title="segundos">
+          <input type="number" class="num-cardio-seg" min="0" max="59" value="${segV}">
         </div></td>`;
     }
 
     const tr = document.createElement("tr");
     if (existente) tr.classList.add("ja-tem");
     tr.dataset.pid = pid;
-
     tr.innerHTML = `
-      <td class="nome-col">
-        ${p.nome}
-        ${existente ? '<span class="badge-existente">já registrado</span>' : ''}
-      </td>
-      ${cellChk("musculacao", r.musculacao, bloqMusc, ct.musculacao + (existente&&r.musculacao?1:0), MAX6)}
-      ${cellCardio(rSeg, bloqCardio, ct.cardio + (existente&&rSeg>0?1:0), MAX6)}
-      ${cellChk("coletiva", r.atividade_coletiva, bloqColetiva, ct.coletiva + (existente&&r.atividade_coletiva?1:0), 1)}
-      ${cellChk("post_insta", r.post_insta, bloqPost, ct.post_insta + (existente&&r.post_insta?1:0), MAX6)}
+      <td>${p.nome}${existente?'<span class="badge-existente">já registrado</span>':''}</td>
+      ${cellChk("musculacao", r.musculacao, bloqMusc, ct.musculacao+(existente&&r.musculacao?1:0), MAX6)}
+      ${cellCardio(rSeg, bloqCard, ct.cardio+(existente&&rSeg>0?1:0), MAX6)}
+      ${cellChk("coletiva", r.atividade_coletiva, bloqCole, ct.coletiva+(existente&&r.atividade_coletiva?1:0), 1)}
+      ${cellChk("post_insta", r.post_insta, bloqPost, ct.post_insta+(existente&&r.post_insta?1:0), MAX6)}
       <td class="centro pts-prev" id="pts-${pid}">
         ${calcPontos({musculacao:r.musculacao,cardio_minutos:Math.floor(rSeg/60),atividade_coletiva:r.atividade_coletiva,post_insta:r.post_insta})}
       </td>`;
-
     tbody.appendChild(tr);
-
-    const atualizar = () => {
-      tr.querySelector(`#pts-${pid}`).textContent = calcPontos(getValoresTr(tr));
-    };
-    tr.querySelectorAll(".chk, .num-cardio-min, .num-cardio-seg").forEach(el => {
-      el.addEventListener("change", atualizar);
-      el.addEventListener("input",  atualizar);
+    const atualizar = () => tr.querySelector(`#pts-${pid}`).textContent = calcPontos(getValoresTr(tr));
+    tr.querySelectorAll(".chk,.num-cardio-min,.num-cardio-seg").forEach(el => {
+      el.addEventListener("change", atualizar); el.addEventListener("input", atualizar);
     });
   });
 
   // ---- cards mobile ----
   const cardsEl = document.getElementById("cards-reg-mobile");
   cardsEl.innerHTML = "";
-  document.getElementById("aviso-sem-parts").style.display = parts.length ? "none" : "block";
+  const data2 = document.getElementById("sel-data").value;
+  const sem2  = semanaDeData(data2);
+  const MX = sem2 ? sem2.max : 6;
 
   parts.forEach(([pid, p]) => {
     const existente = registrosDia[pid];
@@ -586,59 +836,63 @@ function renderizarTabelaRegistro() {
       : 0;
     const r2  = existente || { musculacao:false, atividade_coletiva:false, post_insta:false };
     const ct  = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
-    const MAX6 = sem ? sem.max : 6;
-    const bloqMusc  = !existente && ct.musculacao  >= MAX6;
-    const bloqCard  = !existente && ct.cardio      >= MAX6;
-    const bloqPost  = !existente && ct.post_insta  >= MAX6;
-    const bloqCole  = !existente && ct.coletiva    >= 1;
+    const bloqMusc = !existente && ct.musculacao  >= MX;
+    const bloqCard = !existente && ct.cardio      >= MX;
+    const bloqPost = !existente && ct.post_insta  >= MX;
+    const bloqCole = !existente && ct.coletiva    >= 1;
     const minVal = Math.floor(rSeg2/60), segVal = rSeg2%60;
 
     const card = document.createElement("div");
     card.className = `reg-card${existente?" ja-tem":""}`;
     card.dataset.pid = pid;
-
     const badge = existente ? '<span class="badge-existente">já registrado</span>' : '';
-
-    function mobileRow(label, badgeSem, ctrl) {
-      return `<div class="rc-row"><span class="rc-label">${label} ${badgeSem}</span><div class="rc-ctrl">${ctrl}</div></div>`;
+    function mRow(label, bSem, ctrl) {
+      return `<div class="rc-row"><span class="rc-label">${label} <span class="badge-semana ${bSem.cheio?'cheio':''}" style="font-size:.68rem">${bSem.uso}/${bSem.max}</span></span><div class="rc-ctrl">${ctrl}</div></div>`;
     }
-    function bSem(usado, max, bloq) {
-      return `<span class="badge-semana ${bloq?'cheio':''}" style="font-size:.68rem">${usado}/${max}</span>`;
-    }
-
     card.innerHTML = `
       <div class="rc-nome">${p.nome}${badge}</div>
       ${bloqMusc
-        ? mobileRow('💪 Musculação', bSem(ct.musculacao,MAX6,true), `<span class="rc-limite">limite</span>`)
-        : mobileRow('💪 Musculação', bSem(ct.musculacao+(existente&&r2.musculacao?1:0),MAX6,false),
-            `<input type="checkbox" class="chk" name="musculacao" ${r2.musculacao?"checked":""}>`)
-      }
+        ? mRow('💪 Musculação',{uso:ct.musculacao,max:MX,cheio:true},`<span class="rc-limite">limite</span>`)
+        : mRow('💪 Musculação',{uso:ct.musculacao+(existente&&r2.musculacao?1:0),max:MX,cheio:false},
+            `<input type="checkbox" class="chk" name="musculacao" ${r2.musculacao?"checked":""}>`)}
       ${bloqCard
-        ? mobileRow('⏱ Cardio (min:seg)', bSem(ct.cardio,MAX6,true), `<span class="rc-limite">limite</span>`)
-        : mobileRow('⏱ Cardio (min:seg)', bSem(ct.cardio+(existente&&rSeg2>0?1:0),MAX6,false),
-            `<input type="number" class="num-cardio-min" min="0" max="300" value="${minVal}"><span>:</span><input type="number" class="num-cardio-seg" min="0" max="59" value="${segVal}">`)
-      }
+        ? mRow('⏱ Cardio',{uso:ct.cardio,max:MX,cheio:true},`<span class="rc-limite">limite</span>`)
+        : mRow('⏱ Cardio (min:seg)',{uso:ct.cardio+(existente&&rSeg2>0?1:0),max:MX,cheio:false},
+            `<input type="number" class="num-cardio-min" min="0" max="300" value="${minVal}"><span>:</span><input type="number" class="num-cardio-seg" min="0" max="59" value="${segVal}">`)}
       ${bloqCole
-        ? mobileRow('🤝 At. Coletiva', bSem(ct.coletiva,1,true), `<span class="rc-limite">limite</span>`)
-        : mobileRow('🤝 At. Coletiva', bSem(ct.coletiva+(existente&&r2.atividade_coletiva?1:0),1,false),
-            `<input type="checkbox" class="chk" name="coletiva" ${r2.atividade_coletiva?"checked":""}>`)
-      }
+        ? mRow('🤝 Coletiva',{uso:ct.coletiva,max:1,cheio:true},`<span class="rc-limite">limite</span>`)
+        : mRow('🤝 At. Coletiva',{uso:ct.coletiva+(existente&&r2.atividade_coletiva?1:0),max:1,cheio:false},
+            `<input type="checkbox" class="chk" name="coletiva" ${r2.atividade_coletiva?"checked":""}>`)}
       ${bloqPost
-        ? mobileRow('📸 Post Insta', bSem(ct.post_insta,MAX6,true), `<span class="rc-limite">limite</span>`)
-        : mobileRow('📸 Post Insta', bSem(ct.post_insta+(existente&&r2.post_insta?1:0),MAX6,false),
-            `<input type="checkbox" class="chk" name="post_insta" ${r2.post_insta?"checked":""}>`)
-      }
+        ? mRow('📸 Post Insta',{uso:ct.post_insta,max:MX,cheio:true},`<span class="rc-limite">limite</span>`)
+        : mRow('📸 Post Insta',{uso:ct.post_insta+(existente&&r2.post_insta?1:0),max:MX,cheio:false},
+            `<input type="checkbox" class="chk" name="post_insta" ${r2.post_insta?"checked":""}>`)}
       <div class="rc-row" style="justify-content:flex-end">
         <span style="font-size:.85rem;color:var(--muted);margin-right:.5rem">Pontos estimados:</span>
         <span class="rc-pts" id="mpts-${pid}">${calcPontos({musculacao:r2.musculacao,cardio_minutos:Math.floor(rSeg2/60),atividade_coletiva:r2.atividade_coletiva,post_insta:r2.post_insta})}</span>
       </div>`;
-
-    card.querySelectorAll(".chk, .num-cardio-min, .num-cardio-seg").forEach(el => {
-      el.addEventListener("change", () => card.querySelector(`#mpts-${pid}`).textContent = calcPontos(getValoresCard(card)));
-      el.addEventListener("input",  () => card.querySelector(`#mpts-${pid}`).textContent = calcPontos(getValoresCard(card)));
+    card.querySelectorAll(".chk,.num-cardio-min,.num-cardio-seg").forEach(el => {
+      const up = () => card.querySelector(`#mpts-${pid}`).textContent = calcPontos(getValoresCard(card));
+      el.addEventListener("change", up); el.addEventListener("input", up);
     });
     cardsEl.appendChild(card);
   });
+}
+
+function getValoresTr(tr) {
+  const chkMusc = tr.querySelector('[name="musculacao"]');
+  const inpMin  = tr.querySelector('.num-cardio-min');
+  const inpSeg  = tr.querySelector('.num-cardio-seg');
+  const chkCole = tr.querySelector('[name="coletiva"]');
+  const chkPost = tr.querySelector('[name="post_insta"]');
+  const totalSeg = inpMin ? (parseInt(inpMin.value)||0)*60 + Math.min(parseInt(inpSeg?.value)||0,59) : 0;
+  return {
+    musculacao:         chkMusc ? chkMusc.checked : false,
+    cardio_segundos:    totalSeg,
+    cardio_minutos:     Math.floor(totalSeg/60),
+    atividade_coletiva: chkCole ? chkCole.checked : false,
+    post_insta:         chkPost ? chkPost.checked : false,
+  };
 }
 
 function getValoresCard(card) {
@@ -657,34 +911,17 @@ function getValoresCard(card) {
   };
 }
 
-function getValoresTr(tr) {
-  const chkMusc  = tr.querySelector('[name="musculacao"]');
-  const inpMin   = tr.querySelector('.num-cardio-min');
-  const inpSeg   = tr.querySelector('.num-cardio-seg');
-  const chkCole  = tr.querySelector('[name="coletiva"]');
-  const chkPost  = tr.querySelector('[name="post_insta"]');
-  const totalSeg = inpMin ? (parseInt(inpMin.value)||0)*60 + Math.min(parseInt(inpSeg?.value)||0, 59) : 0;
-  return {
-    musculacao:         chkMusc ? chkMusc.checked : false,
-    cardio_segundos:    totalSeg,
-    cardio_minutos:     Math.floor(totalSeg/60),
-    atividade_coletiva: chkCole ? chkCole.checked : false,
-    post_insta:         chkPost ? chkPost.checked : false,
-  };
-}
-
 // ---- SALVAR TODOS ----
 async function salvarTodos() {
-  const btn  = document.getElementById("btn-salvar");
+  if (!desafioAtivo) return;
+  const btn = document.getElementById("btn-salvar");
   btn.innerHTML = `<span class="spinner"></span>Salvando…`; btn.disabled = true;
 
   const data = document.getElementById("sel-data").value;
   const sem  = semanaDeData(data);
   let salvos = 0, atualizados = 0;
 
-  // coleta de todos os elementos com pid (tabela desktop + cards mobile)
   const elementos = [...document.querySelectorAll("#tbody-reg tr[data-pid], #cards-reg-mobile .reg-card[data-pid]")];
-  // desduplicar por pid (desktop e mobile podem estar ambos presentes)
   const pidsVistos = new Set();
   const elementosUnicos = elementos.filter(el => {
     if (pidsVistos.has(el.dataset.pid)) return false;
@@ -693,28 +930,26 @@ async function salvarTodos() {
 
   for (const el of elementosUnicos) {
     const pid  = el.dataset.pid;
-    const isTr = el.tagName === "TR";
-    const vals = isTr ? getValoresTr(el) : getValoresCard(el);
+    const vals = el.tagName === "TR" ? getValoresTr(el) : getValoresCard(el);
     const ct   = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
     const MAX6 = sem ? sem.max : 6;
     const existente = registrosDia[pid];
 
-    // aplica limite: se a semana já está cheia e não é edição, zera o campo
     if (!existente) {
-      if (ct.musculacao    >= MAX6) vals.musculacao         = false;
-      if (ct.cardio        >= MAX6) { vals.cardio_segundos  = 0; vals.cardio_minutos = 0; }
-      if (ct.post_insta    >= MAX6) vals.post_insta         = false;
-      if (ct.coletiva      >= 1)    vals.atividade_coletiva = false;
+      if (ct.musculacao  >= MAX6) vals.musculacao        = false;
+      if (ct.cardio      >= MAX6) { vals.cardio_segundos = 0; vals.cardio_minutos = 0; }
+      if (ct.post_insta  >= MAX6) vals.post_insta        = false;
+      if (ct.coletiva    >= 1)    vals.atividade_coletiva= false;
     }
 
     const pontos = calcPontos(vals);
-    const dados  = { participanteId: pid, data, ...vals, pontos };
+    const dados  = { participanteId: pid, data, desafioId: desafioAtivoId, ...vals, pontos };
 
     if (existente) {
-      await setDoc(doc(db, "registros", existente.id), dados);
+      await setDoc(doc(db,"registros",existente.id), dados);
       atualizados++;
     } else {
-      await addDoc(collection(db, "registros"), dados);
+      await addDoc(collection(db,"registros"), dados);
       salvos++;
     }
   }
@@ -727,21 +962,20 @@ async function salvarTodos() {
 // ---- PARTICIPANTES CRUD ----
 async function adicionarParticipante(e) {
   e.preventDefault();
-  const nome     = document.getElementById("part-nome").value.trim();
-  const instagram= document.getElementById("part-insta").value.trim().replace(/^@/,"");
-  const gymrats  = document.getElementById("part-gymrats").value.trim();
-
+  if (!desafioAtivo) { flash("Nenhum desafio ativo.", false); return; }
+  const nome      = document.getElementById("part-nome").value.trim();
+  const instagram = document.getElementById("part-insta").value.trim().replace(/^@/,"");
+  const gymrats   = document.getElementById("part-gymrats").value.trim();
   if (!nome) return;
-  await addDoc(collection(db, "participantes"), { nome, instagram, gymratsUser: gymrats });
+  await addDoc(collection(db,"participantes"), { nome, instagram, gymratsUser: gymrats, desafioId: desafioAtivoId });
   document.getElementById("form-part").reset();
   flash("Participante adicionado!");
 }
 
 async function removerParticipante(id) {
   if (!confirm("Remover participante? Os registros dele não serão apagados.")) return;
-  await deleteDoc(doc(db, "participantes", id));
+  await deleteDoc(doc(db,"participantes",id));
 }
 </script>
-
 </body>
 </html>

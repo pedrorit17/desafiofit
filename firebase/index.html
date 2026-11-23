@@ -3,22 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🏋️ 3º Desafio Nanda Carvalho</title>
+  <title>Desafio Nanda Carvalho</title>
   <style>
     :root {
-      --laranja: #e07b39;
-      --laranja-dark: #c4612a;
-      --bg: #faf7f4;
-      --surface: #ffffff;
-      --text: #1a1a1a;
-      --muted: #777;
-      --border: #e8e0d8;
-      --gold: #f4a261;
-      --silver: #adb5bd;
-      --bronze: #c07d3a;
+      --laranja: #e07b39; --laranja-dark: #c4612a; --bg: #faf7f4;
+      --surface: #ffffff; --text: #1a1a1a; --muted: #777; --border: #e8e0d8;
+      --gold: #f4a261; --silver: #adb5bd; --bronze: #c07d3a;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }
 
     header {
@@ -31,13 +23,11 @@
 
     main { max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
 
-    /* Cardio total geral */
-    .hero-stat {
-      display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
-    }
+    /* Stats */
+    .hero-stat { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
     .stat-pill {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: .8rem 1.4rem; flex: 1; min-width: 140px;
+      border-radius: 12px; padding: .8rem 1.4rem; flex: 1; min-width: 130px;
       display: flex; flex-direction: column; align-items: center;
     }
     .stat-pill .label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
@@ -47,73 +37,69 @@
     /* Tabela */
     .tabela-wrap { overflow-x: auto; border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,.07); }
     table { width: 100%; border-collapse: collapse; background: var(--surface); }
-
     thead tr { background: var(--text); }
-    th {
-      color: white; padding: .75rem 1rem; text-align: left;
-      font-size: .78rem; text-transform: uppercase; letter-spacing: .06em;
-      white-space: nowrap;
-    }
+    th { color: white; padding: .75rem 1rem; text-align: left;
+      font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
     th.centro, td.centro { text-align: center; }
-
     td { padding: .8rem 1rem; border-bottom: 1px solid var(--border); font-size: .92rem; vertical-align: middle; }
     tbody tr:last-child td { border-bottom: none; }
-
     tbody tr.top1 td { background: rgba(244,162,97,.13); }
     tbody tr.top2 td { background: rgba(173,181,189,.10); }
     tbody tr.top3 td { background: rgba(192,125,58,.09); }
     tbody tr:hover td { background: #fdf3ec; }
-
     .pos { font-size: 1.2rem; text-align: center; width: 50px; }
     .nome-col { font-weight: 700; }
     .pts-col { font-weight: 700; font-size: 1.1rem; color: var(--laranja); }
+    .cardio-destaque { background: #fff4ec; color: var(--laranja-dark);
+      font-weight: 700; border-radius: 6px; padding: .15rem .5rem; display: inline-block; }
 
-    .cardio-destaque {
-      background: #fff4ec; color: var(--laranja-dark);
-      font-weight: 700; border-radius: 6px; padding: .15rem .5rem;
-      display: inline-block;
+    /* Legenda */
+    .legenda { margin-top: 1rem; font-size: .78rem; color: var(--muted);
+      border-left: 3px solid var(--border); padding-left: .8rem; }
+
+    /* Pontuação */
+    .pontuacao-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1rem 1.4rem; margin-bottom: 1.5rem;
     }
+    .pontuacao-box h4 { font-size: .82rem; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--muted); margin-bottom: .6rem; }
+    .pts-grid { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .pts-tag { background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: .3rem .7rem; font-size: .82rem; }
+    .pts-tag strong { color: var(--laranja); }
 
-    /* Legenda desempate */
-    .legenda {
-      margin-top: 1rem; font-size: .78rem; color: var(--muted);
-      border-left: 3px solid var(--border); padding-left: .8rem;
-    }
-
-    /* Semana progress */
+    /* Semana */
     .semana-info {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 12px; padding: 1rem 1.4rem; margin-bottom: 1.5rem;
       display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
     }
-    .semana-info .badge {
-      background: var(--laranja); color: white;
-      border-radius: 20px; padding: .3rem .9rem; font-size: .85rem; font-weight: 600;
-    }
+    .semana-info .badge { background: var(--laranja); color: white;
+      border-radius: 20px; padding: .3rem .9rem; font-size: .85rem; font-weight: 600; }
     .semana-info span { font-size: .88rem; color: var(--muted); }
 
-    .loading { text-align: center; padding: 3rem; color: var(--muted); }
-    .vazio   { text-align: center; padding: 2rem; color: var(--muted); font-style: italic; }
-
-    /* ---- cards mobile ---- */
+    /* Cards mobile */
     .cards-mobile { display: none; flex-direction: column; gap: .7rem; }
     .rank-card {
-      background: var(--surface); border-radius: 14px;
-      padding: 1rem 1.1rem; border: 1px solid var(--border);
-      display: flex; align-items: center; gap: .9rem;
+      background: var(--surface); border-radius: 14px; padding: 1rem 1.1rem;
+      border: 1px solid var(--border); display: flex; align-items: center; gap: .9rem;
     }
     .rank-card.top1 { border-left: 4px solid var(--gold); }
     .rank-card.top2 { border-left: 4px solid var(--silver); }
     .rank-card.top3 { border-left: 4px solid var(--bronze); }
     .rank-card .medal { font-size: 1.6rem; min-width: 2rem; text-align: center; }
     .rank-card .info  { flex: 1; }
-    .rank-card .info .nome  { font-weight: 700; font-size: 1rem; }
-    .rank-card .info .meta  { display: flex; gap: .6rem; margin-top: .35rem; flex-wrap: wrap; }
-    .rank-card .info .meta span {
-      font-size: .78rem; color: var(--muted);
-      background: var(--bg); border-radius: 6px; padding: .15rem .5rem;
-    }
+    .rank-card .info .nome { font-weight: 700; font-size: 1rem; }
+    .rank-card .info .meta { display: flex; gap: .6rem; margin-top: .35rem; flex-wrap: wrap; }
+    .rank-card .info .meta span { font-size: .78rem; color: var(--muted);
+      background: var(--bg); border-radius: 6px; padding: .15rem .5rem; }
     .rank-card .pts-big { font-size: 1.5rem; font-weight: 800; color: var(--laranja); }
+
+    .loading { text-align: center; padding: 3rem; color: var(--muted); }
+    .vazio   { text-align: center; padding: 2rem; color: var(--muted); font-style: italic; }
+    .sem-desafio { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+    .sem-desafio strong { display: block; font-size: 1.2rem; margin-bottom: .5rem; color: var(--text); }
 
     @media (max-width: 640px) {
       .tabela-wrap { display: none; }
@@ -126,69 +112,86 @@
 <body>
 
 <header>
-  <h1>🏋️ 3º Desafio Nanda Carvalho</h1>
+  <h1 id="titulo-desafio">🏋️ Desafio Nanda Carvalho</h1>
   <p>Personal Trainer Fernanda Carvalho · <strong>@nandacarvalhopersonal</strong></p>
-  <p class="sub">23 de novembro → 18 de dezembro de 2026</p>
+  <p class="sub" id="periodo-desafio">Carregando…</p>
 </header>
 
 <main>
-  <div id="semana-info" class="semana-info" style="display:none">
-    <span class="badge" id="badge-semana"></span>
-    <span id="texto-semana"></span>
-  </div>
-
-  <div class="hero-stat" id="hero-stats">
-    <div class="stat-pill">
-      <span class="label">Participantes</span>
-      <span class="num" id="stat-participantes">—</span>
-    </div>
-    <div class="stat-pill">
-      <span class="label">Total cardio (min)</span>
-      <span class="num" id="stat-cardio">—</span>
-      <span class="unit">tempo acumulado</span>
-    </div>
-    <div class="stat-pill">
-      <span class="label">Total de registros</span>
-      <span class="num" id="stat-registros">—</span>
-      <span class="unit">check-ins no período</span>
-    </div>
-  </div>
-
   <div id="loading" class="loading">Carregando ranking…</div>
+  <div id="conteudo" style="display:none">
 
-  <!-- cards mobile -->
-  <div class="cards-mobile" id="cards-mobile"></div>
+    <div id="semana-info" class="semana-info" style="display:none">
+      <span class="badge" id="badge-semana"></span>
+      <span id="texto-semana"></span>
+    </div>
 
-  <div class="tabela-wrap" id="tabela-wrap" style="display:none">
-    <table>
-      <thead>
-        <tr>
-          <th class="centro">#</th>
-          <th>Participante</th>
-          <th class="centro">Pontos</th>
-          <th class="centro" title="1º DESEMPATE: maior tempo acumulado em cardio">⏱ Cardio (min:seg)<br><small style="font-weight:400;opacity:.75;font-size:.7rem">1º desempate</small></th>
-          <th class="centro hide-mobile" title="2º desempate: maior nº de dias com atividade no GymRats">Dias<br><small style="font-weight:400;opacity:.75;font-size:.7rem">2º desempate</small></th>
-          <th class="centro hide-mobile" title="3º desempate: maior nº de encontros coletivos">Coletivas<br><small style="font-weight:400;opacity:.75;font-size:.7rem">3º desempate</small></th>
-          <th class="centro hide-mobile" title="4º desempate: maior nº de posts marcando @nandacarvalhopersonal e @terrafarma_manipulacao">Posts<br><small style="font-weight:400;opacity:.75;font-size:.7rem">4º desempate</small></th>
-        </tr>
-      </thead>
-      <tbody id="tbody-ranking"></tbody>
-    </table>
+    <div class="hero-stat">
+      <div class="stat-pill">
+        <span class="label">Participantes</span>
+        <span class="num" id="stat-participantes">—</span>
+      </div>
+      <div class="stat-pill">
+        <span class="label">Total cardio</span>
+        <span class="num" id="stat-cardio">—</span>
+        <span class="unit">tempo acumulado</span>
+      </div>
+      <div class="stat-pill">
+        <span class="label">Check-ins</span>
+        <span class="num" id="stat-registros">—</span>
+        <span class="unit">no período</span>
+      </div>
+    </div>
+
+    <div class="pontuacao-box" id="pontuacao-box" style="display:none">
+      <h4>Tabela de pontuação</h4>
+      <div class="pts-grid" id="pts-grid"></div>
+    </div>
+
+    <!-- cards mobile -->
+    <div class="cards-mobile" id="cards-mobile"></div>
+
+    <div class="tabela-wrap" id="tabela-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="centro">#</th>
+            <th>Participante</th>
+            <th class="centro">Pontos</th>
+            <th class="centro" title="1º DESEMPATE: maior tempo acumulado em cardio">
+              ⏱ Cardio (min:seg)<br><small style="font-weight:400;opacity:.75;font-size:.7rem">1º desempate</small>
+            </th>
+            <th class="centro" title="2º desempate: maior nº de dias">
+              Dias<br><small style="font-weight:400;opacity:.75;font-size:.7rem">2º desempate</small>
+            </th>
+            <th class="centro" title="3º desempate: encontros coletivos">
+              Coletivas<br><small style="font-weight:400;opacity:.75;font-size:.7rem">3º desempate</small>
+            </th>
+            <th class="centro" title="4º desempate: posts no Instagram">
+              Posts<br><small style="font-weight:400;opacity:.75;font-size:.7rem">4º desempate</small>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="tbody-ranking"></tbody>
+      </table>
+    </div>
+
+    <p class="legenda" id="legenda">
+      Desempate: 1º Maior tempo de cardio · 2º Maior nº de dias · 3º Coletivas · 4º Posts (@nandacarvalhopersonal + @terrafarma_manipulacao) · 5º Sorteio ao vivo
+    </p>
+    <p id="atualizado" style="text-align:right;font-size:.75rem;color:var(--muted);margin-top:.6rem;"></p>
+
   </div>
-
-  <p class="legenda" id="legenda" style="display:none">
-    Desempate: 1º Maior tempo de cardio (min) · 2º Maior nº de dias com atividade · 3º Maior nº de encontros coletivos · 4º Maior nº de posts (@nandacarvalhopersonal + @terrafarma_manipulacao) · 5º Sorteio ao vivo
-  </p>
-
-  <p id="atualizado" style="text-align:right; font-size:.75rem; color:var(--muted); margin-top:.6rem;"></p>
+  <div id="sem-desafio" class="sem-desafio" style="display:none">
+    <strong>Nenhum desafio ativo no momento</strong>
+    Em breve teremos novidades! 🏋️
+  </div>
 </main>
 
-<!-- Firebase SDK -->
 <script type="module">
   import { initializeApp }                           from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-  import { getFirestore, collection, onSnapshot }   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+  import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-  // ---- config ----
   const cfg = {
     apiKey:            "AIzaSyBSjjzFOSxk3DVbDbyHHLP3mFsLETDMxdo",
     authDomain:        "nanda-carvalho-personal.firebaseapp.com",
@@ -197,49 +200,70 @@
     messagingSenderId: "206265275427",
     appId:             "1:206265275427:web:28978b0c8940f4280d0d96"
   };
-
   const app = initializeApp(cfg);
   const db  = getFirestore(app);
 
-  // ---- regras de pontuação ----
-  function ptsCardio(min) {
-    if (min >= 50) return 5;
-    if (min >= 40) return 4;
-    if (min >= 30) return 3;
-    if (min >= 20) return 2;
-    return 0;
-  }
+  // ---- estado ----
+  let desafioAtivo   = null;
+  let desafioAtivoId = null;
+  let participantes  = {};
+  let registros      = [];
+
+  function fmt(d) { const [y,m,dd]=d.split("-"); return `${dd}/${m}`; }
+  function fmtFull(d) { const [y,m,dd]=d.split("-"); return `${dd}/${m}/${y}`; }
   function fmtMmSs(seg) {
     const m = Math.floor(seg/60), s = seg%60;
     return `${m}:${String(s).padStart(2,'0')}`;
   }
 
-  // ---- semana atual ----
-  const SEMANAS = [
-    { num:1, inicio:"2026-11-23", fim:"2026-11-29" },
-    { num:2, inicio:"2026-11-30", fim:"2026-12-06" },
-    { num:3, inicio:"2026-12-07", fim:"2026-12-13" },
-    { num:4, inicio:"2026-12-14", fim:"2026-12-18" },
-  ];
+  function ptsCardio(min) {
+    const faixas = desafioAtivo?.pontuacao?.cardio_faixas || [];
+    let pts = 0;
+    for (const f of faixas) if (min >= f.de) pts = f.pts;
+    return pts;
+  }
+
   function semanaAtual() {
     const hoje = new Date().toISOString().slice(0,10);
-    return SEMANAS.find(s => hoje >= s.inicio && hoje <= s.fim) || null;
-  }
-  function fmt(d) { const [y,m,dd]=d.split("-"); return `${dd}/${m}`; }
-
-  const sem = semanaAtual();
-  if (sem) {
-    document.getElementById("semana-info").style.display = "flex";
-    document.getElementById("badge-semana").textContent  = `Semana ${sem.num}`;
-    document.getElementById("texto-semana").textContent  = `${fmt(sem.inicio)} a ${fmt(sem.fim)} de 2026`;
+    return (desafioAtivo?.semanas||[]).find(s => hoje >= s.inicio && hoje <= s.fim) || null;
   }
 
-  // ---- listeners em tempo real ----
-  let participantes = {};
-  let registros     = [];
+  function atualizarCabecalho() {
+    if (!desafioAtivo) return;
+    const p = desafioAtivo.pontuacao || {};
+    document.getElementById("titulo-desafio").textContent = `🏋️ ${desafioAtivo.nome || "Desafio Nanda Carvalho"}`;
+    document.title = desafioAtivo.nome || "Desafio Nanda Carvalho";
+    document.getElementById("periodo-desafio").textContent =
+      `${fmtFull(desafioAtivo.inicio)} → ${fmtFull(desafioAtivo.fim)}`;
+
+    const sem = semanaAtual();
+    if (sem) {
+      document.getElementById("semana-info").style.display = "flex";
+      document.getElementById("badge-semana").textContent  = `Semana ${sem.num}`;
+      document.getElementById("texto-semana").textContent  = `${fmt(sem.inicio)} a ${fmt(sem.fim)}`;
+    }
+
+    // tabela de pontuação
+    const faixas = p.cardio_faixas || [];
+    if (faixas.length) {
+      document.getElementById("pontuacao-box").style.display = "block";
+      const tags = [
+        `<span class="pts-tag">💪 Musculação <strong>${p.musculacao??20}pts</strong></span>`,
+        ...faixas.map((f,i) => {
+          const prox = faixas[i+1];
+          const label = prox ? `${f.de}-${prox.de-1}min` : `${f.de}+min`;
+          return `<span class="pts-tag">⏱ ${label} <strong>${f.pts}pts</strong></span>`;
+        }),
+        `<span class="pts-tag">🤝 Coletiva <strong>${p.coletiva??5}pts</strong></span>`,
+        `<span class="pts-tag">📸 Post <strong>${p.post_insta??2}pts</strong></span>`,
+      ];
+      document.getElementById("pts-grid").innerHTML = tags.join("");
+    }
+  }
 
   function recalcularRanking() {
-    // agrega por participante
+    if (!desafioAtivo) return;
+
     const agg = {};
     for (const pid of Object.keys(participantes)) {
       agg[pid] = { nome: participantes[pid].nome, pts:0, cardio_seg:0, dias:0, coletivas:0, posts:0 };
@@ -255,21 +279,23 @@
       if (r.post_insta)         a.posts++;
     }
 
+    const totalDias = (desafioAtivo.semanas||[]).reduce((s,sem) => {
+      let cur = new Date(sem.inicio+"T12:00:00");
+      const fim = new Date(sem.fim+"T12:00:00");
+      while (cur <= fim) { s++; cur.setDate(cur.getDate()+1); }
+      return s;
+    }, 0) || 26;
+
     const lista = Object.values(agg).sort((a,b) =>
-      b.pts - a.pts ||
-      b.cardio_seg - a.cardio_seg ||
-      b.dias - a.dias ||
-      b.coletivas - a.coletivas ||
-      b.posts - a.posts
+      b.pts-a.pts || b.cardio_seg-a.cardio_seg || b.dias-a.dias || b.coletivas-a.coletivas || b.posts-a.posts
     );
 
-    // stats gerais
     const totalSeg = lista.reduce((s,p)=>s+p.cardio_seg, 0);
     document.getElementById("stat-participantes").textContent = lista.length;
     document.getElementById("stat-cardio").textContent        = fmtMmSs(totalSeg);
     document.getElementById("stat-registros").textContent     = registros.length;
 
-    // tbody
+    // tabela desktop
     const tbody = document.getElementById("tbody-ranking");
     tbody.innerHTML = "";
     if (!lista.length) {
@@ -284,9 +310,9 @@
             <td class="nome-col">${p.nome}</td>
             <td class="pts-col centro">${p.pts}</td>
             <td class="centro"><span class="cardio-destaque">${fmtMmSs(p.cardio_seg)}</span></td>
-            <td class="centro hide-mobile">${p.dias}/26</td>
-            <td class="centro hide-mobile">${p.coletivas}</td>
-            <td class="centro hide-mobile">${p.posts}</td>
+            <td class="centro">${p.dias}/${totalDias}</td>
+            <td class="centro">${p.coletivas}</td>
+            <td class="centro">${p.posts}</td>
           </tr>`;
       });
     }
@@ -294,49 +320,71 @@
     // cards mobile
     const cardsEl = document.getElementById("cards-mobile");
     cardsEl.innerHTML = "";
-    if (!lista.length) {
-      cardsEl.innerHTML = `<p class="vazio">Nenhum participante ainda.</p>`;
-    } else {
-      lista.forEach((p, i) => {
-        const cls  = i===0?"top1":i===1?"top2":i===2?"top3":"";
-        const med  = i===0?"🥇":i===1?"🥈":i===2?"🥉":i+1;
-        const card = document.createElement("div");
-        card.className = `rank-card ${cls}`;
-        card.innerHTML = `
-          <div class="medal">${med}</div>
-          <div class="info">
-            <div class="nome">${p.nome}</div>
-            <div class="meta">
-              <span>⏱ ${fmtMmSs(p.cardio_seg)}</span>
-              <span>📅 ${p.dias} dias</span>
-              <span>🤝 ${p.coletivas} coletivas</span>
-              <span>📸 ${p.posts} posts</span>
-            </div>
+    lista.forEach((p, i) => {
+      const cls = i===0?"top1":i===1?"top2":i===2?"top3":"";
+      const med = i===0?"🥇":i===1?"🥈":i===2?"🥉":i+1;
+      const card = document.createElement("div");
+      card.className = `rank-card ${cls}`;
+      card.innerHTML = `
+        <div class="medal">${med}</div>
+        <div class="info">
+          <div class="nome">${p.nome}</div>
+          <div class="meta">
+            <span>⏱ ${fmtMmSs(p.cardio_seg)}</span>
+            <span>📅 ${p.dias} dias</span>
+            <span>🤝 ${p.coletivas}</span>
+            <span>📸 ${p.posts}</span>
           </div>
-          <div class="pts-big">${p.pts}<span style="font-size:.8rem;font-weight:400;color:var(--muted)">pts</span></div>`;
-        cardsEl.appendChild(card);
-      });
-    }
+        </div>
+        <div class="pts-big">${p.pts}<span style="font-size:.8rem;font-weight:400;color:var(--muted)">pts</span></div>`;
+      cardsEl.appendChild(card);
+    });
 
-    document.getElementById("loading").style.display      = "none";
-    document.getElementById("tabela-wrap").style.display  = "block";
-    document.getElementById("legenda").style.display      = "block";
-    document.getElementById("atualizado").textContent =
+    document.getElementById("loading").style.display   = "none";
+    document.getElementById("conteudo").style.display  = "block";
+    document.getElementById("atualizado").textContent  =
       "Atualizado em tempo real · " + new Date().toLocaleTimeString("pt-BR");
   }
 
-  onSnapshot(collection(db, "participantes"), snap => {
+  // ---- listeners ----
+  onSnapshot(collection(db,"desafios"), snap => {
+    const ativo = (() => { let a=null; snap.forEach(d=>{ if(d.data().ativo) a={id:d.id,...d.data()}; }); return a; })();
+
+    if (ativo?.id !== desafioAtivoId) {
+      desafioAtivo   = ativo;
+      desafioAtivoId = ativo?.id || null;
+
+      if (!ativo) {
+        document.getElementById("loading").style.display      = "none";
+        document.getElementById("conteudo").style.display     = "none";
+        document.getElementById("sem-desafio").style.display  = "block";
+        return;
+      }
+      atualizarCabecalho();
+    }
+  });
+
+  onSnapshot(collection(db,"participantes"), snap => {
     participantes = {};
-    snap.forEach(d => { participantes[d.id] = d.data(); });
+    snap.forEach(d => {
+      const data = d.data();
+      if (!desafioAtivoId || !data.desafioId || data.desafioId === desafioAtivoId) {
+        participantes[d.id] = data;
+      }
+    });
     recalcularRanking();
   });
 
-  onSnapshot(collection(db, "registros"), snap => {
+  onSnapshot(collection(db,"registros"), snap => {
     registros = [];
-    snap.forEach(d => { registros.push({ id: d.id, ...d.data() }); });
+    snap.forEach(d => {
+      const data = d.data();
+      if (!desafioAtivoId || !data.desafioId || data.desafioId === desafioAtivoId) {
+        registros.push({ id: d.id, ...data });
+      }
+    });
     recalcularRanking();
   });
 </script>
-
 </body>
 </html>
