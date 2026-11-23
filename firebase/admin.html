@@ -714,8 +714,11 @@ async function salvarDesafio() {
     post_insta:         { max: parseInt(document.getElementById("lim-post-max").value)||6, periodo: document.getElementById("lim-post-per").value },
     atividade_coletiva: { max: parseInt(document.getElementById("lim-cole-max").value)||1, periodo: document.getElementById("lim-cole-per").value },
   };
+  const estaAtivo = editandoDesafioId
+    ? (todosDesafios.find(d => d.id === editandoDesafioId)?.ativo ?? false)
+    : false;
   const dados = {
-    nome, numero: num, inicio, fim, ativo: false,
+    nome, numero: num, inicio, fim, ativo: estaAtivo,
     mostrar_placar: mostrarPlacar,
     pontuacao: { musculacao: ptsMu, coletiva: ptsCo, post_insta: ptsPo, cardio_faixas: faixasTemp },
     semanas: semanasTemp,
