@@ -832,14 +832,21 @@ async function carregarRegistrosDoDia() {
   renderizarTabelaRegistro();
 }
 
-// Retorna { max, periodo, label } para uma atividade, lendo do desafio ativo
-function getLim(atividade) {
+// Retorna { max, periodo } para uma atividade, respeitando o teto da semana atual
+function getLim(atividade, data) {
   const def = { musculacao:{max:6,periodo:"semana"}, cardio:{max:6,periodo:"semana"}, post_insta:{max:6,periodo:"semana"}, atividade_coletiva:{max:1,periodo:"semana"} };
-  return desafioAtivo?.limites?.[atividade] || def[atividade];
+  const lim = { ...(desafioAtivo?.limites?.[atividade] || def[atividade]) };
+  // semana mais curta pode reduzir o limite de atividades "por semana"
+  if (lim.periodo === "semana" && data) {
+    const sem = semanaDeData(data);
+    if (sem && sem.max < lim.max) lim.max = sem.max;
+  }
+  return lim;
 }
-// Retorna { usado, max, bloq, labelPeriodo } dado o estado atual
+// Retorna { usado, max, bloq, label } dado o estado atual
 function limInfo(atividade, existente, ct, rSeg) {
-  const lim = getLim(atividade);
+  const data = document.getElementById("sel-data").value;
+  const lim  = getLim(atividade, data);
   const temHoje = atividade === "cardio"
     ? (existente ? (existente.cardio_segundos > 0 || (existente.cardio_minutos||0) > 0) : false)
     : existente?.[atividade === "atividade_coletiva" ? "atividade_coletiva" : atividade];
