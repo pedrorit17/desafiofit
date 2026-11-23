@@ -572,8 +572,8 @@ function renderizarListaDesafios() {
   const hoje = new Date().toISOString().slice(0,10);
   el.innerHTML = todosDesafios.map(d => {
     const status = d.ativo ? "ativo"
-      : (d.fim && d.fim < hoje ? "encerrado" : "futuro");
-    const corMap = { ativo:["var(--verde)","var(--verde-bg)"], encerrado:["var(--muted)","#f0f0f0"], futuro:["var(--laranja)","#fff4ec"] };
+      : (d.fim && d.fim < hoje ? "encerrado" : "aguardando");
+    const corMap = { ativo:["var(--verde)","var(--verde-bg)"], encerrado:["var(--muted)","#f0f0f0"], aguardando:["var(--laranja)","#fff4ec"] };
     const [cor, bg] = corMap[status];
     const ptsMusc = d.pontuacao?.musculacao ?? 20;
     const ptsCole = d.pontuacao?.coletiva   ?? 5;
@@ -777,7 +777,10 @@ function popularSelectDatas() {
   sel.innerHTML = "";
   if (!desafioAtivo) return;
   const hoje = new Date().toISOString().slice(0,10);
-  datasDesafio().forEach(d => {
+  // inclui hoje mesmo que seja antes do início oficial (para cadastro antecipado)
+  let datas = datasDesafio();
+  if (!datas.includes(hoje)) datas = [hoje, ...datas];
+  datas.forEach(d => {
     const opt = document.createElement("option");
     opt.value = d;
     opt.textContent = `${diaSem(d)} · ${fmtData(d)}`;
