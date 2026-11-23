@@ -357,6 +357,44 @@
             <tbody id="tbody-semanas"></tbody>
           </table>
 
+          <div class="section-title">Limites de check-in por atividade</div>
+          <table class="small" id="tabela-limites">
+            <thead><tr><th>Atividade</th><th>Máximo</th><th>Período</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>💪 Musculação</td>
+                <td><input type="number" id="lim-musc-max" value="6" min="1" max="99"> vezes</td>
+                <td><select id="lim-musc-per" style="padding:.25rem .5rem;border:1.5px solid var(--border);border-radius:6px">
+                  <option value="semana">por semana</option><option value="dia">por dia</option>
+                </select></td>
+              </tr>
+              <tr>
+                <td>⏱ Cardio</td>
+                <td><input type="number" id="lim-card-max" value="6" min="1" max="99"> vezes</td>
+                <td><select id="lim-card-per" style="padding:.25rem .5rem;border:1.5px solid var(--border);border-radius:6px">
+                  <option value="semana">por semana</option><option value="dia">por dia</option>
+                </select></td>
+              </tr>
+              <tr>
+                <td>📸 Post Insta</td>
+                <td><input type="number" id="lim-post-max" value="6" min="1" max="99"> vezes</td>
+                <td><select id="lim-post-per" style="padding:.25rem .5rem;border:1.5px solid var(--border);border-radius:6px">
+                  <option value="semana">por semana</option><option value="dia">por dia</option>
+                </select></td>
+              </tr>
+              <tr>
+                <td>🤝 At. Coletiva</td>
+                <td><input type="number" id="lim-cole-max" value="1" min="1" max="99"> vezes</td>
+                <td><select id="lim-cole-per" style="padding:.25rem .5rem;border:1.5px solid var(--border);border-radius:6px">
+                  <option value="semana">por semana</option><option value="dia">por dia</option>
+                </select></td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size:.78rem;color:var(--muted);margin-top:.4rem">
+            <strong>por dia</strong>: pode fazer 1× por dia, todo dia (sem teto semanal) · <strong>por semana</strong>: total acumulado na semana
+          </p>
+
           <div class="section-title">Visibilidade do placar</div>
           <label style="display:flex;align-items:center;gap:.7rem;cursor:pointer;padding:.5rem 0">
             <input type="checkbox" id="d-mostrar-placar" style="width:20px;height:20px;accent-color:var(--laranja)">
@@ -583,6 +621,15 @@ function abrirFormDesafio(desafio = null) {
   document.getElementById("d-pts-cole").value       = desafio?.pontuacao?.coletiva    ?? 5;
   document.getElementById("d-pts-post").value       = desafio?.pontuacao?.post_insta  ?? 2;
   document.getElementById("d-mostrar-placar").checked = desafio?.mostrar_placar ?? true;
+  const lims = desafio?.limites || {};
+  document.getElementById("lim-musc-max").value = lims.musculacao?.max          ?? 6;
+  document.getElementById("lim-musc-per").value = lims.musculacao?.periodo       ?? "semana";
+  document.getElementById("lim-card-max").value = lims.cardio?.max               ?? 6;
+  document.getElementById("lim-card-per").value = lims.cardio?.periodo           ?? "semana";
+  document.getElementById("lim-post-max").value = lims.post_insta?.max           ?? 6;
+  document.getElementById("lim-post-per").value = lims.post_insta?.periodo       ?? "semana";
+  document.getElementById("lim-cole-max").value = lims.atividade_coletiva?.max   ?? 1;
+  document.getElementById("lim-cole-per").value = lims.atividade_coletiva?.periodo ?? "semana";
 
   faixasTemp  = JSON.parse(JSON.stringify(
     desafio?.pontuacao?.cardio_faixas || [{de:20,pts:2},{de:30,pts:3},{de:40,pts:4},{de:50,pts:5}]
@@ -654,11 +701,18 @@ async function salvarDesafio() {
   if (!semanasTemp.length) { flash("Clique em 'Gerar semanas automaticamente'.", false); return; }
 
   const mostrarPlacar = document.getElementById("d-mostrar-placar").checked;
+  const limites = {
+    musculacao:         { max: parseInt(document.getElementById("lim-musc-max").value)||6, periodo: document.getElementById("lim-musc-per").value },
+    cardio:             { max: parseInt(document.getElementById("lim-card-max").value)||6, periodo: document.getElementById("lim-card-per").value },
+    post_insta:         { max: parseInt(document.getElementById("lim-post-max").value)||6, periodo: document.getElementById("lim-post-per").value },
+    atividade_coletiva: { max: parseInt(document.getElementById("lim-cole-max").value)||1, periodo: document.getElementById("lim-cole-per").value },
+  };
   const dados = {
     nome, numero: num, inicio, fim, ativo: false,
     mostrar_placar: mostrarPlacar,
     pontuacao: { musculacao: ptsMu, coletiva: ptsCo, post_insta: ptsPo, cardio_faixas: faixasTemp },
     semanas: semanasTemp,
+    limites,
   };
 
   if (editandoDesafioId) {
@@ -778,6 +832,29 @@ async function carregarRegistrosDoDia() {
   renderizarTabelaRegistro();
 }
 
+// Retorna { max, periodo, label } para uma atividade, lendo do desafio ativo
+function getLim(atividade) {
+  const def = { musculacao:{max:6,periodo:"semana"}, cardio:{max:6,periodo:"semana"}, post_insta:{max:6,periodo:"semana"}, atividade_coletiva:{max:1,periodo:"semana"} };
+  return desafioAtivo?.limites?.[atividade] || def[atividade];
+}
+// Retorna { usado, max, bloq, labelPeriodo } dado o estado atual
+function limInfo(atividade, existente, ct, rSeg) {
+  const lim = getLim(atividade);
+  const temHoje = atividade === "cardio"
+    ? (existente ? (existente.cardio_segundos > 0 || (existente.cardio_minutos||0) > 0) : false)
+    : existente?.[atividade === "atividade_coletiva" ? "atividade_coletiva" : atividade];
+  const ctCount = atividade === "cardio" ? ct.cardio
+    : atividade === "atividade_coletiva" ? ct.coletiva
+    : ct[atividade] ?? 0;
+
+  if (lim.periodo === "dia") {
+    return { max: 1, usado: temHoje ? 1 : 0, bloq: false, label: "hoje" };
+  }
+  // semana
+  const usadoSemana = ctCount + (temHoje ? 1 : 0);
+  return { max: lim.max, usado: usadoSemana, bloq: !existente && ctCount >= lim.max, label: "sem" };
+}
+
 function renderizarTabelaRegistro() {
   const tbody = document.getElementById("tbody-reg");
   const parts = Object.entries(participantes);
@@ -796,20 +873,20 @@ function renderizarTabelaRegistro() {
     const r   = existente || { musculacao:false, atividade_coletiva:false, post_insta:false };
     const ct  = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
 
-    const bloqMusc = !existente && ct.musculacao  >= MAX6;
-    const bloqCard = !existente && ct.cardio      >= MAX6;
-    const bloqPost = !existente && ct.post_insta  >= MAX6;
-    const bloqCole = !existente && ct.coletiva    >= 1;
+    const liMusc = limInfo("musculacao",        existente, ct, rSeg);
+    const liCard = limInfo("cardio",             existente, ct, rSeg);
+    const liCole = limInfo("atividade_coletiva", existente, ct, rSeg);
+    const liPost = limInfo("post_insta",         existente, ct, rSeg);
 
-    function cellChk(name, checked, bloq, usado, maximo) {
-      const badge = `<span class="badge-semana ${bloq?'cheio':''}">${usado}/${maximo}</span>`;
-      if (bloq) return `<td class="centro">${badge}<br><span style="font-size:.75rem;color:var(--erro)">limite</span></td>`;
+    function cellChk(name, checked, li) {
+      const badge = `<span class="badge-semana ${li.bloq?'cheio':''}">${li.usado}/${li.max}<small style="font-weight:400;opacity:.7"> ${li.label}</small></span>`;
+      if (li.bloq) return `<td class="centro">${badge}<br><span style="font-size:.75rem;color:var(--erro)">limite</span></td>`;
       return `<td class="centro">${badge}<br><input type="checkbox" class="chk" name="${name}" ${checked?"checked":""}></td>`;
     }
-    function cellCardio(totalSeg, bloq, usado, maximo) {
-      const badge = `<span class="badge-semana ${bloq?'cheio':''}">${usado}/${maximo}</span>`;
+    function cellCardio(totalSeg, li) {
+      const badge = `<span class="badge-semana ${li.bloq?'cheio':''}">${li.usado}/${li.max}<small style="font-weight:400;opacity:.7"> ${li.label}</small></span>`;
       const minV = Math.floor(totalSeg/60), segV = totalSeg%60;
-      if (bloq) return `<td class="centro">${badge}<br><span style="font-size:.75rem;color:var(--erro)">limite</span></td>`;
+      if (li.bloq) return `<td class="centro">${badge}<br><span style="font-size:.75rem;color:var(--erro)">limite</span></td>`;
       return `<td class="centro">${badge}<br>
         <div class="cardio-inputs">
           <input type="number" class="num-cardio-min" min="0" max="300" value="${minV}">
@@ -823,10 +900,10 @@ function renderizarTabelaRegistro() {
     tr.dataset.pid = pid;
     tr.innerHTML = `
       <td>${p.nome}${existente?'<span class="badge-existente">já registrado</span>':''}</td>
-      ${cellChk("musculacao", r.musculacao, bloqMusc, ct.musculacao+(existente&&r.musculacao?1:0), MAX6)}
-      ${cellCardio(rSeg, bloqCard, ct.cardio+(existente&&rSeg>0?1:0), MAX6)}
-      ${cellChk("coletiva", r.atividade_coletiva, bloqCole, ct.coletiva+(existente&&r.atividade_coletiva?1:0), 1)}
-      ${cellChk("post_insta", r.post_insta, bloqPost, ct.post_insta+(existente&&r.post_insta?1:0), MAX6)}
+      ${cellChk("musculacao", r.musculacao, liMusc)}
+      ${cellCardio(rSeg, liCard)}
+      ${cellChk("coletiva", r.atividade_coletiva, liCole)}
+      ${cellChk("post_insta", r.post_insta, liPost)}
       <td class="centro pts-prev" id="pts-${pid}">
         ${calcPontos({musculacao:r.musculacao,cardio_minutos:Math.floor(rSeg/60),atividade_coletiva:r.atividade_coletiva,post_insta:r.post_insta})}
       </td>`;
@@ -841,8 +918,6 @@ function renderizarTabelaRegistro() {
   const cardsEl = document.getElementById("cards-reg-mobile");
   cardsEl.innerHTML = "";
   const data2 = document.getElementById("sel-data").value;
-  const sem2  = semanaDeData(data2);
-  const MX = sem2 ? sem2.max : 6;
 
   parts.forEach(([pid, p]) => {
     const existente = registrosDia[pid];
@@ -851,37 +926,33 @@ function renderizarTabelaRegistro() {
       : 0;
     const r2  = existente || { musculacao:false, atividade_coletiva:false, post_insta:false };
     const ct  = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
-    const bloqMusc = !existente && ct.musculacao  >= MX;
-    const bloqCard = !existente && ct.cardio      >= MX;
-    const bloqPost = !existente && ct.post_insta  >= MX;
-    const bloqCole = !existente && ct.coletiva    >= 1;
+    const mMusc = limInfo("musculacao",        existente, ct, rSeg2);
+    const mCard = limInfo("cardio",             existente, ct, rSeg2);
+    const mCole = limInfo("atividade_coletiva", existente, ct, rSeg2);
+    const mPost = limInfo("post_insta",         existente, ct, rSeg2);
     const minVal = Math.floor(rSeg2/60), segVal = rSeg2%60;
 
     const card = document.createElement("div");
     card.className = `reg-card${existente?" ja-tem":""}`;
     card.dataset.pid = pid;
     const badge = existente ? '<span class="badge-existente">já registrado</span>' : '';
-    function mRow(label, bSem, ctrl) {
-      return `<div class="rc-row"><span class="rc-label">${label} <span class="badge-semana ${bSem.cheio?'cheio':''}" style="font-size:.68rem">${bSem.uso}/${bSem.max}</span></span><div class="rc-ctrl">${ctrl}</div></div>`;
+    function mRow(label, li, ctrl) {
+      return `<div class="rc-row"><span class="rc-label">${label} <span class="badge-semana ${li.bloq?'cheio':''}" style="font-size:.68rem">${li.usado}/${li.max} ${li.label}</span></span><div class="rc-ctrl">${ctrl}</div></div>`;
     }
     card.innerHTML = `
       <div class="rc-nome">${p.nome}${badge}</div>
-      ${bloqMusc
-        ? mRow('💪 Musculação',{uso:ct.musculacao,max:MX,cheio:true},`<span class="rc-limite">limite</span>`)
-        : mRow('💪 Musculação',{uso:ct.musculacao+(existente&&r2.musculacao?1:0),max:MX,cheio:false},
-            `<input type="checkbox" class="chk" name="musculacao" ${r2.musculacao?"checked":""}>`)}
-      ${bloqCard
-        ? mRow('⏱ Cardio',{uso:ct.cardio,max:MX,cheio:true},`<span class="rc-limite">limite</span>`)
-        : mRow('⏱ Cardio (min:seg)',{uso:ct.cardio+(existente&&rSeg2>0?1:0),max:MX,cheio:false},
-            `<input type="number" class="num-cardio-min" min="0" max="300" value="${minVal}"><span>:</span><input type="number" class="num-cardio-seg" min="0" max="59" value="${segVal}">`)}
-      ${bloqCole
-        ? mRow('🤝 Coletiva',{uso:ct.coletiva,max:1,cheio:true},`<span class="rc-limite">limite</span>`)
-        : mRow('🤝 At. Coletiva',{uso:ct.coletiva+(existente&&r2.atividade_coletiva?1:0),max:1,cheio:false},
-            `<input type="checkbox" class="chk" name="coletiva" ${r2.atividade_coletiva?"checked":""}>`)}
-      ${bloqPost
-        ? mRow('📸 Post Insta',{uso:ct.post_insta,max:MX,cheio:true},`<span class="rc-limite">limite</span>`)
-        : mRow('📸 Post Insta',{uso:ct.post_insta+(existente&&r2.post_insta?1:0),max:MX,cheio:false},
-            `<input type="checkbox" class="chk" name="post_insta" ${r2.post_insta?"checked":""}>`)}
+      ${mMusc.bloq
+        ? mRow('💪 Musculação', mMusc, `<span class="rc-limite">limite</span>`)
+        : mRow('💪 Musculação', mMusc, `<input type="checkbox" class="chk" name="musculacao" ${r2.musculacao?"checked":""}>`)}
+      ${mCard.bloq
+        ? mRow('⏱ Cardio', mCard, `<span class="rc-limite">limite</span>`)
+        : mRow('⏱ Cardio (min:seg)', mCard, `<input type="number" class="num-cardio-min" min="0" max="300" value="${minVal}"><span>:</span><input type="number" class="num-cardio-seg" min="0" max="59" value="${segVal}">`)}
+      ${mCole.bloq
+        ? mRow('🤝 Coletiva', mCole, `<span class="rc-limite">limite</span>`)
+        : mRow('🤝 At. Coletiva', mCole, `<input type="checkbox" class="chk" name="coletiva" ${r2.atividade_coletiva?"checked":""}>`)}
+      ${mPost.bloq
+        ? mRow('📸 Post Insta', mPost, `<span class="rc-limite">limite</span>`)
+        : mRow('📸 Post Insta', mPost, `<input type="checkbox" class="chk" name="post_insta" ${r2.post_insta?"checked":""}>`)}
       <div class="rc-row" style="justify-content:flex-end">
         <span style="font-size:.85rem;color:var(--muted);margin-right:.5rem">Pontos estimados:</span>
         <span class="rc-pts" id="mpts-${pid}">${calcPontos({musculacao:r2.musculacao,cardio_minutos:Math.floor(rSeg2/60),atividade_coletiva:r2.atividade_coletiva,post_insta:r2.post_insta})}</span>
@@ -951,10 +1022,15 @@ async function salvarTodos() {
     const existente = registrosDia[pid];
 
     if (!existente) {
-      if (ct.musculacao  >= MAX6) vals.musculacao        = false;
-      if (ct.cardio      >= MAX6) { vals.cardio_segundos = 0; vals.cardio_minutos = 0; }
-      if (ct.post_insta  >= MAX6) vals.post_insta        = false;
-      if (ct.coletiva    >= 1)    vals.atividade_coletiva= false;
+      const lMusc = getLim("musculacao");
+      const lCard = getLim("cardio");
+      const lPost = getLim("post_insta");
+      const lCole = getLim("atividade_coletiva");
+      if (lMusc.periodo === "semana" && ct.musculacao  >= lMusc.max) vals.musculacao        = false;
+      if (lCard.periodo === "semana" && ct.cardio      >= lCard.max) { vals.cardio_segundos = 0; vals.cardio_minutos = 0; }
+      if (lPost.periodo === "semana" && ct.post_insta  >= lPost.max) vals.post_insta        = false;
+      if (lCole.periodo === "semana" && ct.coletiva    >= lCole.max) vals.atividade_coletiva= false;
+      // "dia": sem bloqueio semanal (a estrutura de um registro/dia já limita a 1 por dia)
     }
 
     const pontos = calcPontos(vals);
