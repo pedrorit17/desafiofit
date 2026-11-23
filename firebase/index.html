@@ -186,6 +186,11 @@
     <strong>Nenhum desafio ativo no momento</strong>
     Em breve teremos novidades! 🏋️
   </div>
+  <div id="placar-oculto" class="sem-desafio" style="display:none">
+    <strong>🔒 Placar em breve!</strong>
+    O ranking será divulgado pela Fernanda assim que o desafio começar.<br>
+    <span style="font-size:.85rem">Fique de olho! 👀</span>
+  </div>
 </main>
 
 <script type="module">
@@ -355,12 +360,19 @@
       desafioAtivoId = ativo?.id || null;
 
       if (!ativo) {
-        document.getElementById("loading").style.display      = "none";
-        document.getElementById("conteudo").style.display     = "none";
-        document.getElementById("sem-desafio").style.display  = "block";
+        document.getElementById("loading").style.display        = "none";
+        document.getElementById("conteudo").style.display       = "none";
+        document.getElementById("sem-desafio").style.display    = "block";
+        document.getElementById("placar-oculto").style.display  = "none";
         return;
       }
-      atualizarCabecalho();
+      // placar oculto pelo admin
+      const placarVisivel = ativo.mostrar_placar !== false;
+      document.getElementById("loading").style.display        = "none";
+      document.getElementById("conteudo").style.display       = placarVisivel ? "block" : "none";
+      document.getElementById("sem-desafio").style.display    = "none";
+      document.getElementById("placar-oculto").style.display  = placarVisivel ? "none" : "block";
+      if (placarVisivel) atualizarCabecalho();
     }
   });
 

@@ -357,6 +357,12 @@
             <tbody id="tbody-semanas"></tbody>
           </table>
 
+          <div class="section-title">Visibilidade do placar</div>
+          <label style="display:flex;align-items:center;gap:.7rem;cursor:pointer;padding:.5rem 0">
+            <input type="checkbox" id="d-mostrar-placar" style="width:20px;height:20px;accent-color:var(--laranja)">
+            <span style="font-size:.93rem">Mostrar placar público <span style="font-size:.8rem;color:var(--muted)">(se desmarcado, a tela pública exibe "Placar em breve")</span></span>
+          </label>
+
           <div style="display:flex; gap:.8rem; margin-top:1.5rem; flex-wrap:wrap">
             <button class="btn btn-laranja" id="btn-salvar-desafio">Salvar desafio</button>
             <button class="btn btn-cinza" id="btn-cancelar-desafio">Cancelar</button>
@@ -534,12 +540,18 @@ function renderizarListaDesafios() {
     const ptsMusc = d.pontuacao?.musculacao ?? 20;
     const ptsCole = d.pontuacao?.coletiva   ?? 5;
     const ptsPo   = d.pontuacao?.post_insta ?? 2;
+    const placarTag = d.ativo
+      ? (d.mostrar_placar !== false
+          ? `<span class="status-badge" style="background:#e8f4fd;color:#1565c0">👁 placar visível</span>`
+          : `<span class="status-badge" style="background:#f0f0f0;color:var(--muted)">🔒 placar oculto</span>`)
+      : "";
     return `
       <div class="desafio-item${d.ativo?" ativo":""}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
           <div>
             <span class="d-nome">${d.nome||"Sem nome"}</span>
             <span class="status-badge" style="background:${bg};color:${cor}">${status}</span>
+            ${placarTag}
             <div class="d-meta">${d.inicio?fmtData(d.inicio):""} → ${d.fim?fmtData(d.fim):""} · Musculação ${ptsMusc}pts · Coletiva ${ptsCole}pts · Post ${ptsPo}pts</div>
           </div>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
@@ -567,9 +579,10 @@ function abrirFormDesafio(desafio = null) {
   document.getElementById("d-num").value     = desafio?.numero  || (maxNum + 1);
   document.getElementById("d-inicio").value  = desafio?.inicio  || "";
   document.getElementById("d-fim").value     = desafio?.fim     || "";
-  document.getElementById("d-pts-musc").value= desafio?.pontuacao?.musculacao  ?? 20;
-  document.getElementById("d-pts-cole").value= desafio?.pontuacao?.coletiva    ?? 5;
-  document.getElementById("d-pts-post").value= desafio?.pontuacao?.post_insta  ?? 2;
+  document.getElementById("d-pts-musc").value       = desafio?.pontuacao?.musculacao  ?? 20;
+  document.getElementById("d-pts-cole").value       = desafio?.pontuacao?.coletiva    ?? 5;
+  document.getElementById("d-pts-post").value       = desafio?.pontuacao?.post_insta  ?? 2;
+  document.getElementById("d-mostrar-placar").checked = desafio?.mostrar_placar ?? true;
 
   faixasTemp  = JSON.parse(JSON.stringify(
     desafio?.pontuacao?.cardio_faixas || [{de:20,pts:2},{de:30,pts:3},{de:40,pts:4},{de:50,pts:5}]
@@ -640,8 +653,10 @@ async function salvarDesafio() {
   if (!inicio||!fim) { flash("Informe as datas de início e fim.", false); return; }
   if (!semanasTemp.length) { flash("Clique em 'Gerar semanas automaticamente'.", false); return; }
 
+  const mostrarPlacar = document.getElementById("d-mostrar-placar").checked;
   const dados = {
     nome, numero: num, inicio, fim, ativo: false,
+    mostrar_placar: mostrarPlacar,
     pontuacao: { musculacao: ptsMu, coletiva: ptsCo, post_insta: ptsPo, cardio_faixas: faixasTemp },
     semanas: semanasTemp,
   };
