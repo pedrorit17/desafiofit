@@ -768,17 +768,48 @@ function renderizarListaParticipantes() {
   if (!parts.length) { lista.innerHTML = "<p style='color:var(--muted)'>Nenhum participante ainda.</p>"; return; }
   lista.innerHTML = `<div class="lista-parts">` +
     parts.map(([id, p]) => `
-      <div class="part-item">
-        <div>
+      <div class="part-item" id="part-item-${id}">
+        <div style="flex:1">
           <div class="nome">${p.nome}</div>
           <div class="insta">${p.instagram?"@"+p.instagram:""}${p.gymratsUser?" · "+p.gymratsUser:""}</div>
         </div>
+        <button class="btn-editar-part" data-id="${id}" style="background:none;border:1.5px solid var(--border);border-radius:6px;padding:.25rem .6rem;cursor:pointer;font-size:.8rem;margin-right:.4rem">✏️</button>
         <button class="btn-remover" data-id="${id}">✕</button>
+      </div>
+      <div class="part-edit-form" id="part-edit-${id}" style="display:none;padding:.6rem .8rem;background:var(--cinza-bg,#f8f8f8);border-radius:8px;margin-bottom:.5rem;gap:.5rem;flex-wrap:wrap;align-items:center">
+        <input id="edit-nome-${id}" value="${p.nome}" placeholder="Nome" style="flex:1;min-width:140px;padding:.35rem .6rem;border:1.5px solid var(--border);border-radius:6px">
+        <input id="edit-insta-${id}" value="${p.instagram||''}" placeholder="Instagram (sem @)" style="flex:1;min-width:120px;padding:.35rem .6rem;border:1.5px solid var(--border);border-radius:6px">
+        <input id="edit-gym-${id}" value="${p.gymratsUser||''}" placeholder="GymRats user" style="flex:1;min-width:120px;padding:.35rem .6rem;border:1.5px solid var(--border);border-radius:6px">
+        <button class="btn btn-verde btn-sm btn-salvar-part" data-id="${id}">Salvar</button>
+        <button class="btn btn-cinza btn-sm btn-cancelar-part" data-id="${id}">Cancelar</button>
       </div>`).join("") +
   `</div>`;
   lista.querySelectorAll(".btn-remover").forEach(btn => {
     btn.addEventListener("click", () => removerParticipante(btn.dataset.id));
   });
+  lista.querySelectorAll(".btn-editar-part").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const f = document.getElementById("part-edit-" + btn.dataset.id);
+      f.style.display = f.style.display === "none" ? "flex" : "none";
+    });
+  });
+  lista.querySelectorAll(".btn-cancelar-part").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.getElementById("part-edit-" + btn.dataset.id).style.display = "none";
+    });
+  });
+  lista.querySelectorAll(".btn-salvar-part").forEach(btn => {
+    btn.addEventListener("click", () => editarParticipante(btn.dataset.id));
+  });
+}
+
+async function editarParticipante(id) {
+  const nome  = document.getElementById("edit-nome-" + id).value.trim();
+  const insta = document.getElementById("edit-insta-" + id).value.trim().replace(/^@/,"");
+  const gym   = document.getElementById("edit-gym-" + id).value.trim();
+  if (!nome) { flash("Nome não pode ficar vazio.", false); return; }
+  await setDoc(doc(db,"participantes",id), { nome, instagram: insta, gymratsUser: gym }, { merge: true });
+  flash("Participante atualizado!");
 }
 
 // ===== REGISTRAR DIA =====
