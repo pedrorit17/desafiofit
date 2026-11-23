@@ -674,7 +674,7 @@ function renderizarFaixas() {
       <td><input type="number" min="0" max="99" value="${f.pts}"
         onchange="faixasTemp[${i}].pts=+this.value"> pts</td>
       <td><button style="background:var(--erro-bg);color:var(--erro);border:none;border-radius:6px;padding:.2rem .5rem;cursor:pointer"
-        onclick="faixasTemp.splice(${i},1);renderizarFaixas()">✕</button></td>
+        onclick="window.removerFaixa(${i})">✕</button></td>
     </tr>`).join("");
 }
 
@@ -1084,6 +1084,12 @@ async function removerParticipante(id) {
   if (!confirm("Remover participante? Os registros dele não serão apagados.")) return;
   await deleteDoc(doc(db,"participantes",id));
 }
+
+// expõe funções chamadas por onclick inline (necessário com type="module")
+window.ativarDesafio        = ativarDesafio;
+window.abrirFormDesafioById = abrirFormDesafioById;
+window.removerParticipante  = removerParticipante;
+window.removerFaixa         = (i) => { faixasTemp.splice(i,1); renderizarFaixas(); };
 </script>
 </body>
 </html>
