@@ -143,11 +143,6 @@
       </div>
     </div>
 
-    <div class="pontuacao-box" id="pontuacao-box" style="display:none">
-      <h4>Tabela de pontuação</h4>
-      <div class="pts-grid" id="pts-grid"></div>
-    </div>
-
     <!-- cards mobile -->
     <div class="cards-mobile" id="cards-mobile"></div>
 
@@ -248,22 +243,6 @@
       document.getElementById("texto-semana").textContent  = `${fmt(sem.inicio)} a ${fmt(sem.fim)}`;
     }
 
-    // tabela de pontuação
-    const faixas = p.cardio_faixas || [];
-    if (faixas.length) {
-      document.getElementById("pontuacao-box").style.display = "block";
-      const tags = [
-        `<span class="pts-tag">💪 Musculação <strong>${p.musculacao??20}pts</strong></span>`,
-        ...faixas.map((f,i) => {
-          const prox = faixas[i+1];
-          const label = prox ? `${f.de}-${prox.de-1}min` : `${f.de}+min`;
-          return `<span class="pts-tag">⏱ ${label} <strong>${f.pts}pts</strong></span>`;
-        }),
-        `<span class="pts-tag">🤝 Coletiva <strong>${p.coletiva??5}pts</strong></span>`,
-        `<span class="pts-tag">📸 Post <strong>${p.post_insta??2}pts</strong></span>`,
-      ];
-      document.getElementById("pts-grid").innerHTML = tags.join("");
-    }
   }
 
   function recalcularRanking() {
