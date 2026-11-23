@@ -606,11 +606,18 @@ function abrirFormDesafioById(id) {
   if (d) abrirFormDesafio(d);
 }
 
+function ativarAbaDesafios() {
+  document.querySelectorAll(".tab,.painel").forEach(el => el.classList.remove("ativo"));
+  document.querySelector('.tab[data-tab="desafios"]')?.classList.add("ativo");
+  document.getElementById("painel-desafios")?.classList.add("ativo");
+}
+
 function abrirFormDesafio(desafio = null) {
+  ativarAbaDesafios();
   editandoDesafioId = desafio?.id || null;
   document.getElementById("form-desafio-titulo").textContent = desafio ? "Editar Desafio" : "Novo Desafio";
   document.getElementById("form-desafio-wrap").style.display = "block";
-  document.getElementById("form-desafio-wrap").scrollIntoView({ behavior:"smooth", block:"start" });
+  setTimeout(() => document.getElementById("form-desafio-wrap").scrollIntoView({ behavior:"smooth", block:"start" }), 50);
 
   const maxNum = todosDesafios.length ? Math.max(...todosDesafios.map(d=>d.numero||0)) : 0;
   document.getElementById("d-nome").value    = desafio?.nome    || "";
