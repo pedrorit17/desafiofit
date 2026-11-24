@@ -1195,14 +1195,21 @@ async function salvarParticipanteAuto(pid, getVals) {
 
   if (existente) {
     await setDoc(doc(db,"registros",existente.id), dados);
+    registrosDia[pid] = { ...registrosDia[pid], ...dados };
   } else {
     const ref = await addDoc(collection(db,"registros"), dados);
     registrosDia[pid] = { id: ref.id, ...dados };
+    // atualiza contagem semanal local sem recarregar do banco
+    if (!contagemSemana[pid]) contagemSemana[pid] = {musculacao:0,cardio:0,post_insta:0,coletiva:0};
+    if (vals.musculacao)         contagemSemana[pid].musculacao++;
+    if (vals.cardio_segundos > 0) contagemSemana[pid].cardio++;
+    if (vals.post_insta)         contagemSemana[pid].post_insta++;
+    if (vals.atividade_coletiva) contagemSemana[pid].coletiva++;
   }
 
   const nomePart = participantes[pid]?.nome || pid;
   registrarLog(nomePart, vals, valsAntigos);
-  await carregarRegistrosDoDia();
+  // sem recarregar do banco — só atualiza a UI local
   renderizarPartAtual();
 }
 
