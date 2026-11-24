@@ -174,7 +174,10 @@
     <p class="legenda" id="legenda">
       Desempate: 1º Maior tempo de cardio · 2º Maior nº de dias · 3º Coletivas · 4º Posts (@nandacarvalhopersonal + @terrafarma_manipulacao) · 5º Sorteio ao vivo
     </p>
-    <p id="atualizado" style="text-align:right;font-size:.75rem;color:var(--muted);margin-top:.6rem;"></p>
+    <p style="text-align:right;font-size:.75rem;color:var(--muted);margin-top:.6rem;">
+      <span id="atualizado"></span>
+      <button id="btn-atualizar" onclick="carregarDados(true)" style="display:none;margin-left:.4rem;font-size:.75rem;padding:.15rem .5rem;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;color:var(--laranja)">Atualizar</button>
+    </p>
 
   </div>
   <div id="sem-desafio" class="sem-desafio" style="display:none">
@@ -190,7 +193,7 @@
 
 <script type="module">
   import { initializeApp }                           from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-  import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
   const cfg = {
     apiKey:            "AIzaSyBSjjzFOSxk3DVbDbyHHLP3mFsLETDMxdo",
@@ -329,56 +332,102 @@
 
     document.getElementById("loading").style.display   = "none";
     document.getElementById("conteudo").style.display  = "block";
-    document.getElementById("atualizado").textContent  =
-      "Atualizado em tempo real · " + new Date().toLocaleTimeString("pt-BR");
+    const agora = new Date().toLocaleTimeString("pt-BR", {timeZone:"America/Sao_Paulo"});
+    document.getElementById("atualizado").textContent = "Atualizado às " + agora;
   }
 
-  // ---- listeners ----
-  onSnapshot(collection(db,"desafios"), snap => {
-    const ativo = (() => { let a=null; snap.forEach(d=>{ if(d.data().ativo) a={id:d.id,...d.data()}; }); return a; })();
+  // ---- cache local 5 minutos ----
+  const CACHE_KEY = "desafiofit_cache";
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minutos em ms
 
-    if (ativo?.id !== desafioAtivoId) {
-      desafioAtivo   = ativo;
-      desafioAtivoId = ativo?.id || null;
+  function salvarCache(dados) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), dados }));
+    } catch(e) {}
+  }
 
-      if (!ativo) {
-        document.getElementById("loading").style.display        = "none";
-        document.getElementById("conteudo").style.display       = "none";
-        document.getElementById("sem-desafio").style.display    = "block";
-        document.getElementById("placar-oculto").style.display  = "none";
+  function lerCache() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const { ts, dados } = JSON.parse(raw);
+      if (Date.now() - ts > CACHE_TTL) return null;
+      return dados;
+    } catch(e) { return null; }
+  }
+
+  async function carregarDados(forcar) {
+    if (!forcar) {
+      const cache = lerCache();
+      if (cache) {
+        aplicarDados(cache);
+        const min = Math.floor((Date.now() - JSON.parse(localStorage.getItem(CACHE_KEY)||"{}").ts) / 60000);
+        document.getElementById("atualizado").textContent =
+          `Atualizado há ${min < 1 ? "menos de 1" : min} min · `;
+        const btn = document.getElementById("btn-atualizar");
+        if (btn) btn.style.display = "inline";
         return;
       }
-      // placar oculto pelo admin
-      const placarVisivel = ativo.mostrar_placar !== false;
-      document.getElementById("loading").style.display        = "none";
-      document.getElementById("conteudo").style.display       = placarVisivel ? "block" : "none";
-      document.getElementById("sem-desafio").style.display    = "none";
-      document.getElementById("placar-oculto").style.display  = placarVisivel ? "none" : "block";
-      if (placarVisivel) atualizarCabecalho();
     }
-  });
+    document.getElementById("loading").style.display  = "block";
+    document.getElementById("conteudo").style.display = "none";
+    try {
+      const [snapD, snapP, snapR] = await Promise.all([
+        getDocs(collection(db,"desafios")),
+        getDocs(collection(db,"participantes")),
+        getDocs(collection(db,"registros")),
+      ]);
+      const desafios = []; snapD.forEach(d => desafios.push({id:d.id,...d.data()}));
+      const parts    = []; snapP.forEach(d => parts.push({id:d.id,...d.data()}));
+      const regs     = []; snapR.forEach(d => regs.push({id:d.id,...d.data()}));
+      const dados = { desafios, parts, regs };
+      salvarCache(dados);
+      aplicarDados(dados);
+      const btn = document.getElementById("btn-atualizar");
+      if (btn) btn.style.display = "none";
+    } catch(e) {
+      document.getElementById("loading").textContent = "Erro ao carregar dados.";
+    }
+  }
 
-  onSnapshot(collection(db,"participantes"), snap => {
+  function aplicarDados({ desafios, parts, regs }) {
+    const ativo = desafios.find(d => d.ativo) || null;
+    desafioAtivo   = ativo;
+    desafioAtivoId = ativo?.id || null;
+
+    if (!ativo) {
+      document.getElementById("loading").style.display       = "none";
+      document.getElementById("conteudo").style.display      = "none";
+      document.getElementById("sem-desafio").style.display   = "block";
+      document.getElementById("placar-oculto").style.display = "none";
+      return;
+    }
+    const placarVisivel = ativo.mostrar_placar !== false;
+    document.getElementById("loading").style.display       = "none";
+    document.getElementById("conteudo").style.display      = placarVisivel ? "block" : "none";
+    document.getElementById("sem-desafio").style.display   = "none";
+    document.getElementById("placar-oculto").style.display = placarVisivel ? "none" : "block";
+    if (!placarVisivel) return;
+
     participantes = {};
-    snap.forEach(d => {
-      const data = d.data();
-      if (!desafioAtivoId || !data.desafioId || data.desafioId === desafioAtivoId) {
-        participantes[d.id] = data;
-      }
+    parts.forEach(p => {
+      if (!desafioAtivoId || !p.desafioId || p.desafioId === desafioAtivoId)
+        participantes[p.id] = p;
     });
-    recalcularRanking();
-  });
-
-  onSnapshot(collection(db,"registros"), snap => {
     registros = [];
-    snap.forEach(d => {
-      const data = d.data();
-      if (!desafioAtivoId || !data.desafioId || data.desafioId === desafioAtivoId) {
-        registros.push({ id: d.id, ...data });
-      }
+    regs.forEach(r => {
+      if (!desafioAtivoId || !r.desafioId || r.desafioId === desafioAtivoId)
+        registros.push(r);
     });
+    atualizarCabecalho();
     recalcularRanking();
-  });
+  }
+
+  window.carregarDados = carregarDados;
+
+  // atualização automática a cada 5 minutos
+  carregarDados(false);
+  setInterval(() => carregarDados(true), CACHE_TTL);
 </script>
 </body>
 </html>
