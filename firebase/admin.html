@@ -521,14 +521,20 @@ function iniciarApp() {
   document.getElementById("sel-data").addEventListener("change", carregarRegistrosDoDia);
   document.getElementById("form-part").addEventListener("submit", adicionarParticipante);
 
-  document.getElementById("btn-part-prev").addEventListener("click", () => {
+  document.getElementById("btn-part-prev").addEventListener("click", async () => {
     const parts = Object.entries(participantes);
-    partIdx = (partIdx - 1 + parts.length) % parts.length;
+    const [pid] = parts[partIdx];
+    lerSessoesDoDOM(pid);
+    await salvarParticipanteAuto(pid, () => getValoresPart(pid));
+    if (partIdx > 0) partIdx--;
     renderizarPartAtual();
   });
-  document.getElementById("btn-part-next").addEventListener("click", () => {
+  document.getElementById("btn-part-next").addEventListener("click", async () => {
     const parts = Object.entries(participantes);
-    partIdx = (partIdx + 1) % parts.length;
+    const [pid] = parts[partIdx];
+    lerSessoesDoDOM(pid);
+    await salvarParticipanteAuto(pid, () => getValoresPart(pid));
+    if (partIdx < parts.length - 1) partIdx++;
     renderizarPartAtual();
   });
   document.getElementById("btn-salvar-proximo").addEventListener("click", async () => {
