@@ -242,7 +242,7 @@
               <tr>
                 <th>Participante</th>
                 <th class="centro" id="th-musculacao">Musculação<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
-                <th class="centro">Cardio (min:seg)<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
+                <th class="centro">Cardio (h:min:seg)<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
                 <th class="centro">At. Coletiva<br><small style="font-weight:400;opacity:.7">máx 1/sem</small></th>
                 <th class="centro">Post Insta<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
                 <th class="centro">Pts</th>
@@ -457,9 +457,9 @@ function calcPontos(r) {
        + (r.atividade_coletiva ? (p.coletiva??5) : 0)
        + (r.post_insta ? (p.post_insta??2) : 0);
 }
-function fmtMmSs(seg) {
-  const m = Math.floor(seg/60), s = seg%60;
-  return `${m}:${String(s).padStart(2,'0')}`;
+function fmtHhMmSs(seg) {
+  const h = Math.floor(seg/3600), m = Math.floor((seg%3600)/60), s = seg%60;
+  return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 function semanaDeData(d) {
   return (desafioAtivo?.semanas||[]).find(s => d >= s.inicio && d <= s.fim) || null;
@@ -936,13 +936,16 @@ function renderizarTabelaRegistro() {
     }
     function cellCardio(totalSeg, li) {
       const badge = `<span class="badge-semana ${li.bloq?'cheio':''}">${li.usado}/${li.max}<small style="font-weight:400;opacity:.7"> ${li.label}</small></span>`;
-      const minV = Math.floor(totalSeg/60), segV = totalSeg%60;
+      const hV = Math.floor(totalSeg/3600), minV = Math.floor((totalSeg%3600)/60), segV = totalSeg%60;
       if (li.bloq) return `<td class="centro">${badge}<br><span style="font-size:.75rem;color:var(--erro)">limite</span></td>`;
       return `<td class="centro">${badge}<br>
         <div class="cardio-inputs">
-          <input type="number" class="num-cardio-min" min="0" max="300" value="${minV}">
-          <span>:</span>
-          <input type="number" class="num-cardio-seg" min="0" max="59" value="${segV}">
+          <input type="number" class="num-cardio-h" min="0" max="23" value="${hV}" style="width:3rem">
+          <span>h</span>
+          <input type="number" class="num-cardio-min" min="0" max="59" value="${minV}" style="width:3rem">
+          <span>m</span>
+          <input type="number" class="num-cardio-seg" min="0" max="59" value="${segV}" style="width:3rem">
+          <span>s</span>
         </div></td>`;
     }
 
@@ -960,7 +963,7 @@ function renderizarTabelaRegistro() {
       </td>`;
     tbody.appendChild(tr);
     const atualizar = () => tr.querySelector(`#pts-${pid}`).textContent = calcPontos(getValoresTr(tr));
-    tr.querySelectorAll(".chk,.num-cardio-min,.num-cardio-seg").forEach(el => {
+    tr.querySelectorAll(".chk,.num-cardio-h,.num-cardio-min,.num-cardio-seg").forEach(el => {
       el.addEventListener("change", atualizar); el.addEventListener("input", atualizar);
     });
   });
@@ -981,7 +984,7 @@ function renderizarTabelaRegistro() {
     const mCard = limInfo("cardio",             existente, ct, rSeg2);
     const mCole = limInfo("atividade_coletiva", existente, ct, rSeg2);
     const mPost = limInfo("post_insta",         existente, ct, rSeg2);
-    const minVal = Math.floor(rSeg2/60), segVal = rSeg2%60;
+    const hVal = Math.floor(rSeg2/3600), minVal = Math.floor((rSeg2%3600)/60), segVal = rSeg2%60;
 
     const card = document.createElement("div");
     card.className = `reg-card${existente?" ja-tem":""}`;
@@ -997,7 +1000,7 @@ function renderizarTabelaRegistro() {
         : mRow('💪 Musculação', mMusc, `<input type="checkbox" class="chk" name="musculacao" ${r2.musculacao?"checked":""}>`)}
       ${mCard.bloq
         ? mRow('⏱ Cardio', mCard, `<span class="rc-limite">limite</span>`)
-        : mRow('⏱ Cardio (min:seg)', mCard, `<input type="number" class="num-cardio-min" min="0" max="300" value="${minVal}"><span>:</span><input type="number" class="num-cardio-seg" min="0" max="59" value="${segVal}">`)}
+        : mRow('⏱ Cardio (h:m:s)', mCard, `<input type="number" class="num-cardio-h" min="0" max="23" value="${hVal}" style="width:3rem"><span>h</span><input type="number" class="num-cardio-min" min="0" max="59" value="${minVal}" style="width:3rem"><span>m</span><input type="number" class="num-cardio-seg" min="0" max="59" value="${segVal}" style="width:3rem"><span>s</span>`)}
       ${mCole.bloq
         ? mRow('🤝 Coletiva', mCole, `<span class="rc-limite">limite</span>`)
         : mRow('🤝 At. Coletiva', mCole, `<input type="checkbox" class="chk" name="coletiva" ${r2.atividade_coletiva?"checked":""}>`)}
@@ -1008,7 +1011,7 @@ function renderizarTabelaRegistro() {
         <span style="font-size:.85rem;color:var(--muted);margin-right:.5rem">Pontos estimados:</span>
         <span class="rc-pts" id="mpts-${pid}">${calcPontos({musculacao:r2.musculacao,cardio_minutos:Math.floor(rSeg2/60),atividade_coletiva:r2.atividade_coletiva,post_insta:r2.post_insta})}</span>
       </div>`;
-    card.querySelectorAll(".chk,.num-cardio-min,.num-cardio-seg").forEach(el => {
+    card.querySelectorAll(".chk,.num-cardio-h,.num-cardio-min,.num-cardio-seg").forEach(el => {
       const up = () => card.querySelector(`#mpts-${pid}`).textContent = calcPontos(getValoresCard(card));
       el.addEventListener("change", up); el.addEventListener("input", up);
     });
@@ -1016,13 +1019,18 @@ function renderizarTabelaRegistro() {
   });
 }
 
+function calcTotalSeg(el) {
+  const h   = el.querySelector('.num-cardio-h');
+  const min = el.querySelector('.num-cardio-min');
+  const seg = el.querySelector('.num-cardio-seg');
+  return (parseInt(h?.value)||0)*3600 + (parseInt(min?.value)||0)*60 + Math.min(parseInt(seg?.value)||0,59);
+}
+
 function getValoresTr(tr) {
   const chkMusc = tr.querySelector('[name="musculacao"]');
-  const inpMin  = tr.querySelector('.num-cardio-min');
-  const inpSeg  = tr.querySelector('.num-cardio-seg');
   const chkCole = tr.querySelector('[name="coletiva"]');
   const chkPost = tr.querySelector('[name="post_insta"]');
-  const totalSeg = inpMin ? (parseInt(inpMin.value)||0)*60 + Math.min(parseInt(inpSeg?.value)||0,59) : 0;
+  const totalSeg = calcTotalSeg(tr);
   return {
     musculacao:         chkMusc ? chkMusc.checked : false,
     cardio_segundos:    totalSeg,
@@ -1034,11 +1042,9 @@ function getValoresTr(tr) {
 
 function getValoresCard(card) {
   const chkMusc = card.querySelector('[name="musculacao"]');
-  const inpMin  = card.querySelector('.num-cardio-min');
-  const inpSeg  = card.querySelector('.num-cardio-seg');
   const chkCole = card.querySelector('[name="coletiva"]');
   const chkPost = card.querySelector('[name="post_insta"]');
-  const totalSeg = inpMin ? (parseInt(inpMin.value)||0)*60 + Math.min(parseInt(inpSeg?.value)||0,59) : 0;
+  const totalSeg = calcTotalSeg(card);
   return {
     musculacao:         chkMusc ? chkMusc.checked : false,
     cardio_segundos:    totalSeg,

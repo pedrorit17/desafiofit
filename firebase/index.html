@@ -154,7 +154,7 @@
             <th>Participante</th>
             <th class="centro">Pontos</th>
             <th class="centro" title="1º DESEMPATE: maior tempo acumulado em cardio">
-              ⏱ Cardio (min:seg)<br><small style="font-weight:400;opacity:.75;font-size:.7rem">1º desempate</small>
+              ⏱ Cardio (h:min:seg)<br><small style="font-weight:400;opacity:.75;font-size:.7rem">1º desempate</small>
             </th>
             <th class="centro" title="2º desempate: maior nº de dias">
               Dias<br><small style="font-weight:400;opacity:.75;font-size:.7rem">2º desempate</small>
@@ -211,9 +211,9 @@
 
   function fmt(d) { const [y,m,dd]=d.split("-"); return `${dd}/${m}`; }
   function fmtFull(d) { const [y,m,dd]=d.split("-"); return `${dd}/${m}/${y}`; }
-  function fmtMmSs(seg) {
-    const m = Math.floor(seg/60), s = seg%60;
-    return `${m}:${String(s).padStart(2,'0')}`;
+  function fmtHhMmSs(seg) {
+    const h = Math.floor(seg/3600), m = Math.floor((seg%3600)/60), s = seg%60;
+    return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   }
 
   function ptsCardio(min) {
@@ -276,7 +276,7 @@
 
     const totalSeg = lista.reduce((s,p)=>s+p.cardio_seg, 0);
     document.getElementById("stat-participantes").textContent = lista.length;
-    document.getElementById("stat-cardio").textContent        = fmtMmSs(totalSeg);
+    document.getElementById("stat-cardio").textContent        = fmtHhMmSs(totalSeg);
     document.getElementById("stat-registros").textContent     = registros.length;
 
     // tabela desktop
@@ -293,7 +293,7 @@
             <td class="pos">${med}</td>
             <td class="nome-col">${p.nome}</td>
             <td class="pts-col centro">${p.pts}</td>
-            <td class="centro"><span class="cardio-destaque">${fmtMmSs(p.cardio_seg)}</span></td>
+            <td class="centro"><span class="cardio-destaque">${fmtHhMmSs(p.cardio_seg)}</span></td>
             <td class="centro">${p.dias}/${totalDias}</td>
             <td class="centro">${p.coletivas}</td>
             <td class="centro">${p.posts}</td>
@@ -314,7 +314,7 @@
         <div class="info">
           <div class="nome">${p.nome}</div>
           <div class="meta">
-            <span>⏱ ${fmtMmSs(p.cardio_seg)}</span>
+            <span>⏱ ${fmtHhMmSs(p.cardio_seg)}</span>
             <span>📅 ${p.dias} dias</span>
             <span>🤝 ${p.coletivas}</span>
             <span>📸 ${p.posts}</span>
