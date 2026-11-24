@@ -1132,14 +1132,8 @@ async function salvarParticipanteAuto(pid, getVals) {
 }
 
 function ligarAutoSalve(el, pid, getVals) {
-  el.querySelectorAll(".chk").forEach(chk => {
-    chk.addEventListener("change", () => salvarParticipanteAuto(pid, getVals));
-  });
-  el.querySelectorAll(".num-cardio-h,.num-cardio-min,.num-cardio-seg").forEach(inp => {
-    inp.addEventListener("change", () => {
-      clearTimeout(_debounceTimers[pid]);
-      _debounceTimers[pid] = setTimeout(() => salvarParticipanteAuto(pid, getVals), 800);
-    });
+  el.querySelectorAll(".chk,.num-cardio-h,.num-cardio-min,.num-cardio-seg").forEach(inp => {
+    inp.addEventListener("change", () => salvarParticipanteAuto(pid, getVals));
   });
 }
 
