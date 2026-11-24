@@ -969,6 +969,7 @@ function renderizarTabelaRegistro() {
     tr.querySelectorAll(".chk,.num-cardio-h,.num-cardio-min,.num-cardio-seg").forEach(el => {
       el.addEventListener("change", atualizar); el.addEventListener("input", atualizar);
     });
+    ligarAutoSalve(tr, pid, () => getValoresTr(tr));
   });
 
   // ---- cards mobile ----
@@ -1018,6 +1019,7 @@ function renderizarTabelaRegistro() {
       const up = () => card.querySelector(`#mpts-${pid}`).textContent = calcPontos(getValoresCard(card));
       el.addEventListener("change", up); el.addEventListener("input", up);
     });
+    ligarAutoSalve(card, pid, () => getValoresCard(card));
     cardsEl.appendChild(card);
   });
 }
@@ -1058,6 +1060,48 @@ function getValoresCard(card) {
 }
 
 // ---- SALVAR TODOS ----
+const _debounceTimers = {};
+async function salvarParticipanteAuto(pid, getVals) {
+  if (!desafioAtivo) return;
+  const data = document.getElementById("sel-data").value;
+  const ct   = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
+  const existente = registrosDia[pid];
+  const vals = getVals();
+
+  if (!existente) {
+    const lMusc = getLim("musculacao", data), lCard = getLim("cardio", data);
+    const lPost = getLim("post_insta", data), lCole = getLim("atividade_coletiva", data);
+    if (lMusc.periodo === "semana" && ct.musculacao >= lMusc.max) vals.musculacao = false;
+    if (lCard.periodo === "semana" && ct.cardio     >= lCard.max) { vals.cardio_segundos = 0; vals.cardio_minutos = 0; }
+    if (lPost.periodo === "semana" && ct.post_insta >= lPost.max) vals.post_insta = false;
+    if (lCole.periodo === "semana" && ct.coletiva   >= lCole.max) vals.atividade_coletiva = false;
+  }
+
+  const pontos = calcPontos(vals);
+  const dados  = { participanteId: pid, data, desafioId: desafioAtivoId, ...vals, pontos };
+
+  if (existente) {
+    await setDoc(doc(db,"registros",existente.id), dados);
+  } else {
+    const ref = await addDoc(collection(db,"registros"), dados);
+    registrosDia[pid] = { id: ref.id, ...dados };
+  }
+  // atualiza contagem da semana para o participante
+  await carregarRegistrosDoDia();
+}
+
+function ligarAutoSalve(el, pid, getVals) {
+  el.querySelectorAll(".chk").forEach(chk => {
+    chk.addEventListener("change", () => salvarParticipanteAuto(pid, getVals));
+  });
+  el.querySelectorAll(".num-cardio-h,.num-cardio-min,.num-cardio-seg").forEach(inp => {
+    inp.addEventListener("change", () => {
+      clearTimeout(_debounceTimers[pid]);
+      _debounceTimers[pid] = setTimeout(() => salvarParticipanteAuto(pid, getVals), 800);
+    });
+  });
+}
+
 async function salvarTodos() {
   if (!desafioAtivo) return;
   const btn = document.getElementById("btn-salvar");
