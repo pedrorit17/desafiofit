@@ -230,31 +230,27 @@
           <div class="info-semana" id="info-semana"></div>
         </div>
 
-        <div id="aviso-sem-parts" class="alert alert-err" style="display:none">
+        <div id="aviso-sem-parts-reg" class="alert alert-err" style="display:none">
           Nenhum participante cadastrado. Vá à aba <strong>Participantes</strong> para adicionar.
         </div>
 
-        <div class="cards-reg-mobile" id="cards-reg-mobile"></div>
+        <!-- navegação por participante -->
+        <div id="reg-part-wrap" style="display:none">
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem">
+            <button class="btn btn-cinza btn-sm" id="btn-part-prev">← Anterior</button>
+            <div style="flex:1;text-align:center">
+              <div id="reg-part-nome" style="font-weight:700;font-size:1.05rem"></div>
+              <div id="reg-part-progresso" style="font-size:.78rem;color:var(--muted)"></div>
+            </div>
+            <button class="btn btn-cinza btn-sm" id="btn-part-next">Próximo →</button>
+          </div>
 
-        <div class="tabela-wrap">
-          <table class="reg" id="tabela-reg">
-            <thead>
-              <tr>
-                <th>Participante</th>
-                <th class="centro" id="th-musculacao">Musculação<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
-                <th class="centro">Cardio (h:min:seg)<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
-                <th class="centro">At. Coletiva<br><small style="font-weight:400;opacity:.7">máx 1/sem</small></th>
-                <th class="centro">Post Insta<br><small style="font-weight:400;opacity:.7">máx 6/sem</small></th>
-                <th class="centro">Pts</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-reg"></tbody>
-          </table>
-        </div>
+          <div id="reg-part-campos"></div>
 
-        <div class="registro-footer">
-          <span id="txt-checkins" class="info-semana"></span>
-          <button class="btn btn-laranja" id="btn-salvar">Salvar todos</button>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;flex-wrap:wrap;gap:.5rem">
+            <span style="font-size:.9rem;color:var(--muted)">Pontos estimados: <strong id="reg-pts-prev" style="color:var(--laranja);font-size:1rem">0</strong></span>
+            <button class="btn btn-laranja" id="btn-salvar-proximo">Salvar e Próximo →</button>
+          </div>
         </div>
         <div id="log-alteracoes" style="margin-top:1rem;display:none">
           <div style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.4rem">Últimas alterações</div>
@@ -523,8 +519,36 @@ document.querySelectorAll(".tab").forEach(tab => {
 function iniciarApp() {
   escutarDesafios();
   document.getElementById("sel-data").addEventListener("change", carregarRegistrosDoDia);
-  document.getElementById("btn-salvar").addEventListener("click", salvarTodos);
   document.getElementById("form-part").addEventListener("submit", adicionarParticipante);
+
+  document.getElementById("btn-part-prev").addEventListener("click", () => {
+    const parts = Object.entries(participantes);
+    partIdx = (partIdx - 1 + parts.length) % parts.length;
+    renderizarPartAtual();
+  });
+  document.getElementById("btn-part-next").addEventListener("click", () => {
+    const parts = Object.entries(participantes);
+    partIdx = (partIdx + 1) % parts.length;
+    renderizarPartAtual();
+  });
+  document.getElementById("btn-salvar-proximo").addEventListener("click", async () => {
+    const parts = Object.entries(participantes);
+    if (!parts.length) return;
+    const [pid] = parts[partIdx];
+    const btn = document.getElementById("btn-salvar-proximo");
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span>Salvando…`;
+    await salvarParticipanteAuto(pid, () => getValoresPart(pid));
+    // avançar para o próximo (ou ficar no último)
+    if (partIdx < parts.length - 1) {
+      partIdx++;
+    }
+    sessoesCardio[parts[partIdx]?.[0]] = undefined; // força reload do próximo
+    btn.disabled = false;
+    btn.innerHTML = "Salvar e Próximo →";
+    flash("Salvo!");
+    renderizarPartAtual();
+  });
   document.getElementById("btn-novo-desafio").addEventListener("click", () => abrirFormDesafio());
   document.getElementById("btn-gerar-semanas").addEventListener("click", gerarSemanasAuto);
   document.getElementById("btn-add-faixa").addEventListener("click", () => {
@@ -848,6 +872,7 @@ function atualizarInfoSemana() {
 
 async function carregarRegistrosDoDia() {
   if (!desafioAtivo) return;
+  sessoesCardio = {};
   atualizarInfoSemana();
   const data = document.getElementById("sel-data").value;
   const sem  = semanaDeData(data);
@@ -913,158 +938,182 @@ function limInfo(atividade, existente, ct, rSeg) {
   return { max: lim.max, usado: usadoSemana, bloq: !existente && ctCount >= lim.max, label: "sem" };
 }
 
+// ---- REGISTRO POR PARTICIPANTE ----
+let sessoesCardio = {}; // { [pid]: [{h,m,s}] }
+let partIdx = 0;
+
+function sessoesParaSegundos(pid) {
+  return (sessoesCardio[pid] || []).reduce((acc, s) =>
+    acc + (parseInt(s.h)||0)*3600 + (parseInt(s.m)||0)*60 + (parseInt(s.s)||0), 0);
+}
+
 function renderizarTabelaRegistro() {
-  const tbody = document.getElementById("tbody-reg");
+  // alias para a nova função
+  renderizarPartAtual();
+}
+
+function renderizarPartAtual() {
   const parts = Object.entries(participantes);
-  const data  = document.getElementById("sel-data").value;
-  const sem   = semanaDeData(data);
-  const MAX6  = sem ? sem.max : 6;
+  const aviso = document.getElementById("aviso-sem-parts-reg");
+  const wrap  = document.getElementById("reg-part-wrap");
+  if (!parts.length) {
+    aviso.style.display = "block"; wrap.style.display = "none"; return;
+  }
+  aviso.style.display = "none"; wrap.style.display = "block";
 
-  document.getElementById("aviso-sem-parts").style.display = parts.length ? "none" : "block";
+  if (partIdx >= parts.length) partIdx = parts.length - 1;
+  if (partIdx < 0) partIdx = 0;
 
-  tbody.innerHTML = "";
-  parts.forEach(([pid, p]) => {
-    const existente = registrosDia[pid];
-    const rSeg = existente
-      ? (existente.cardio_segundos != null ? existente.cardio_segundos : (existente.cardio_minutos||0)*60)
-      : 0;
-    const r   = existente || { musculacao:false, atividade_coletiva:false, post_insta:false };
-    const ct  = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
+  const [pid, p] = parts[partIdx];
+  document.getElementById("reg-part-nome").textContent = p.nome;
+  document.getElementById("reg-part-progresso").textContent =
+    `${partIdx + 1} de ${parts.length}`;
 
-    const liMusc = limInfo("musculacao",        existente, ct, rSeg);
-    const liCard = limInfo("cardio",             existente, ct, rSeg);
-    const liCole = limInfo("atividade_coletiva", existente, ct, rSeg);
-    const liPost = limInfo("post_insta",         existente, ct, rSeg);
+  const existente = registrosDia[pid];
+  const rSeg = existente
+    ? (existente.cardio_segundos != null ? existente.cardio_segundos : (existente.cardio_minutos||0)*60)
+    : 0;
+  const r  = existente || { musculacao:false, atividade_coletiva:false, post_insta:false };
+  const ct = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
 
-    function cellChk(name, checked, li) {
-      const badge = `<span class="badge-semana ${li.bloq?'cheio':''}">${li.usado}/${li.max}<small style="font-weight:400;opacity:.7"> ${li.label}</small></span>`;
-      if (li.bloq) return `<td class="centro">${badge}<br><span style="font-size:.75rem;color:var(--erro)">limite</span></td>`;
-      return `<td class="centro">${badge}<br><input type="checkbox" class="chk" name="${name}" ${checked?"checked":""}></td>`;
+  const liMusc = limInfo("musculacao",        existente, ct, rSeg);
+  const liCard = limInfo("cardio",             existente, ct, rSeg);
+  const liCole = limInfo("atividade_coletiva", existente, ct, rSeg);
+  const liPost = limInfo("post_insta",         existente, ct, rSeg);
+
+  // inicializar sessões cardio a partir do banco (só na primeira vez ou após salvar)
+  if (!sessoesCardio[pid]) {
+    if (existente?.cardio_sessoes?.length) {
+      sessoesCardio[pid] = existente.cardio_sessoes.map(s => ({...s}));
+    } else if (rSeg > 0) {
+      sessoesCardio[pid] = [{
+        h: Math.floor(rSeg/3600),
+        m: Math.floor((rSeg%3600)/60),
+        s: rSeg%60
+      }];
+    } else {
+      sessoesCardio[pid] = [];
     }
-    function cellCardio(totalSeg, li) {
-      const badge = `<span class="badge-semana ${li.bloq?'cheio':''}">${li.usado}/${li.max}<small style="font-weight:400;opacity:.7"> ${li.label}</small></span>`;
-      const hV = Math.floor(totalSeg/3600), minV = Math.floor((totalSeg%3600)/60), segV = totalSeg%60;
-      if (li.bloq) return `<td class="centro">${badge}<br><span style="font-size:.75rem;color:var(--erro)">limite</span></td>`;
-      return `<td class="centro">${badge}<br>
-        <div class="cardio-inputs">
-          <input type="number" class="num-cardio-h" min="0" max="23" value="${hV}" style="width:3rem">
-          <span>h</span>
-          <input type="number" class="num-cardio-min" min="0" max="59" value="${minV}" style="width:3rem">
-          <span>m</span>
-          <input type="number" class="num-cardio-seg" min="0" max="59" value="${segV}" style="width:3rem">
-          <span>s</span>
-        </div></td>`;
-    }
+  }
 
-    const tr = document.createElement("tr");
-    if (existente) tr.classList.add("ja-tem");
-    tr.dataset.pid = pid;
-    tr.innerHTML = `
-      <td>${p.nome}${existente?'<span class="badge-existente">já registrado</span>':''}</td>
-      ${cellChk("musculacao", r.musculacao, liMusc)}
-      ${cellCardio(rSeg, liCard)}
-      ${cellChk("coletiva", r.atividade_coletiva, liCole)}
-      ${cellChk("post_insta", r.post_insta, liPost)}
-      <td class="centro pts-prev" id="pts-${pid}">
-        ${calcPontos({musculacao:r.musculacao,cardio_minutos:Math.floor(rSeg/60),atividade_coletiva:r.atividade_coletiva,post_insta:r.post_insta})}
-      </td>`;
-    tbody.appendChild(tr);
-    const atualizar = () => tr.querySelector(`#pts-${pid}`).textContent = calcPontos(getValoresTr(tr));
-    tr.querySelectorAll(".chk,.num-cardio-h,.num-cardio-min,.num-cardio-seg").forEach(el => {
-      el.addEventListener("change", atualizar); el.addEventListener("input", atualizar);
-    });
-    ligarAutoSalve(tr, pid, () => getValoresTr(tr));
-  });
+  function badgeLi(li) {
+    return `<span class="badge-semana ${li.bloq?'cheio':''}">${li.usado}/${li.max} <small>${li.label}</small></span>`;
+  }
 
-  // ---- cards mobile ----
-  const cardsEl = document.getElementById("cards-reg-mobile");
-  cardsEl.innerHTML = "";
-  const data2 = document.getElementById("sel-data").value;
+  function rowChk(label, name, checked, li) {
+    const ctrl = li.bloq
+      ? `<span style="color:var(--erro);font-size:.82rem">limite atingido</span>`
+      : `<input type="checkbox" class="chk" name="${name}" ${checked?"checked":""}>`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.55rem 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:.95rem">${label} ${badgeLi(li)}</span>${ctrl}</div>`;
+  }
 
-  parts.forEach(([pid, p]) => {
-    const existente = registrosDia[pid];
-    const rSeg2 = existente
-      ? (existente.cardio_segundos != null ? existente.cardio_segundos : (existente.cardio_minutos||0)*60)
-      : 0;
-    const r2  = existente || { musculacao:false, atividade_coletiva:false, post_insta:false };
-    const ct  = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
-    const mMusc = limInfo("musculacao",        existente, ct, rSeg2);
-    const mCard = limInfo("cardio",             existente, ct, rSeg2);
-    const mCole = limInfo("atividade_coletiva", existente, ct, rSeg2);
-    const mPost = limInfo("post_insta",         existente, ct, rSeg2);
-    const hVal = Math.floor(rSeg2/3600), minVal = Math.floor((rSeg2%3600)/60), segVal = rSeg2%60;
-
-    const card = document.createElement("div");
-    card.className = `reg-card${existente?" ja-tem":""}`;
-    card.dataset.pid = pid;
-    const badge = existente ? '<span class="badge-existente">já registrado</span>' : '';
-    function mRow(label, li, ctrl) {
-      return `<div class="rc-row"><span class="rc-label">${label} <span class="badge-semana ${li.bloq?'cheio':''}" style="font-size:.68rem">${li.usado}/${li.max} ${li.label}</span></span><div class="rc-ctrl">${ctrl}</div></div>`;
-    }
-    card.innerHTML = `
-      <div class="rc-nome">${p.nome}${badge}</div>
-      ${mMusc.bloq
-        ? mRow('💪 Musculação', mMusc, `<span class="rc-limite">limite</span>`)
-        : mRow('💪 Musculação', mMusc, `<input type="checkbox" class="chk" name="musculacao" ${r2.musculacao?"checked":""}>`)}
-      ${mCard.bloq
-        ? mRow('⏱ Cardio', mCard, `<span class="rc-limite">limite</span>`)
-        : mRow('⏱ Cardio (h:m:s)', mCard, `<input type="number" class="num-cardio-h" min="0" max="23" value="${hVal}" style="width:3rem"><span>h</span><input type="number" class="num-cardio-min" min="0" max="59" value="${minVal}" style="width:3rem"><span>m</span><input type="number" class="num-cardio-seg" min="0" max="59" value="${segVal}" style="width:3rem"><span>s</span>`)}
-      ${mCole.bloq
-        ? mRow('🤝 Coletiva', mCole, `<span class="rc-limite">limite</span>`)
-        : mRow('🤝 At. Coletiva', mCole, `<input type="checkbox" class="chk" name="coletiva" ${r2.atividade_coletiva?"checked":""}>`)}
-      ${mPost.bloq
-        ? mRow('📸 Post Insta', mPost, `<span class="rc-limite">limite</span>`)
-        : mRow('📸 Post Insta', mPost, `<input type="checkbox" class="chk" name="post_insta" ${r2.post_insta?"checked":""}>`)}
-      <div class="rc-row" style="justify-content:flex-end">
-        <span style="font-size:.85rem;color:var(--muted);margin-right:.5rem">Pontos estimados:</span>
-        <span class="rc-pts" id="mpts-${pid}">${calcPontos({musculacao:r2.musculacao,cardio_minutos:Math.floor(rSeg2/60),atividade_coletiva:r2.atividade_coletiva,post_insta:r2.post_insta})}</span>
+  function renderSessoes() {
+    const sessoes = sessoesCardio[pid] || [];
+    const totalSeg = sessoesParaSegundos(pid);
+    const rows = sessoes.map((s, i) => `
+      <div class="sessao-row" data-idx="${i}" style="display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem">
+        <input type="number" class="sc-h" min="0" max="23" value="${s.h||0}" style="width:3rem;padding:.25rem .3rem">
+        <span>h</span>
+        <input type="number" class="sc-m" min="0" max="59" value="${s.m||0}" style="width:3rem;padding:.25rem .3rem">
+        <span>m</span>
+        <input type="number" class="sc-s" min="0" max="59" value="${s.s||0}" style="width:3rem;padding:.25rem .3rem">
+        <span>s</span>
+        <button type="button" class="btn btn-cinza btn-sm btn-rm-sessao" data-idx="${i}" style="padding:.2rem .5rem;font-size:.8rem">✕</button>
+      </div>`).join("");
+    const total = totalSeg > 0
+      ? `<div style="font-size:.82rem;color:var(--muted);margin-top:.3rem">Total: <strong>${fmtHhMmSs(totalSeg)}</strong></div>`
+      : "";
+    return `
+      <div style="padding:.55rem 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem">
+          <span style="font-size:.95rem">⏱ Cardio (h:m:s) ${badgeLi(liCard)}</span>
+          ${liCard.bloq ? `<span style="color:var(--erro);font-size:.82rem">limite atingido</span>` : ""}
+        </div>
+        ${liCard.bloq ? "" : `
+          <div id="sessoes-lista">${rows}</div>
+          ${total}
+          <button type="button" class="btn btn-cinza btn-sm" id="btn-add-sessao" style="margin-top:.4rem;font-size:.82rem">+ Adicionar sessão</button>
+        `}
       </div>`;
-    card.querySelectorAll(".chk,.num-cardio-h,.num-cardio-min,.num-cardio-seg").forEach(el => {
-      const up = () => card.querySelector(`#mpts-${pid}`).textContent = calcPontos(getValoresCard(card));
-      el.addEventListener("change", up); el.addEventListener("input", up);
+  }
+
+  const campos = document.getElementById("reg-part-campos");
+  campos.innerHTML = `
+    <div style="background:var(--surface);border-radius:10px;padding:.8rem 1rem;margin-bottom:.5rem">
+      ${existente ? `<div style="font-size:.78rem;color:var(--verde,#2ecc40);margin-bottom:.5rem">✅ Já registrado hoje</div>` : ""}
+      ${rowChk("💪 Musculação", "musculacao", r.musculacao, liMusc)}
+      ${renderSessoes()}
+      ${rowChk("🤝 At. Coletiva", "coletiva", r.atividade_coletiva, liCole)}
+      ${rowChk("📸 Post Insta", "post_insta", r.post_insta, liPost)}
+    </div>`;
+
+  ligarEventosPart(pid);
+  atualizarPtsPreview(pid);
+}
+
+function ligarEventosPart(pid) {
+  const campos = document.getElementById("reg-part-campos");
+
+  campos.querySelector("#btn-add-sessao")?.addEventListener("click", () => {
+    if (!sessoesCardio[pid]) sessoesCardio[pid] = [];
+    sessoesCardio[pid].push({ h:0, m:0, s:0 });
+    renderizarPartAtual();
+  });
+
+  campos.querySelectorAll(".btn-rm-sessao").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.dataset.idx);
+      sessoesCardio[pid].splice(idx, 1);
+      renderizarPartAtual();
     });
-    ligarAutoSalve(card, pid, () => getValoresCard(card));
-    cardsEl.appendChild(card);
+  });
+
+  campos.querySelectorAll(".sc-h,.sc-m,.sc-s").forEach(inp => {
+    inp.addEventListener("change", () => {
+      lerSessoesDoDOM(pid);
+      atualizarPtsPreview(pid);
+    });
+    inp.addEventListener("input", () => atualizarPtsPreview(pid));
+  });
+
+  campos.querySelectorAll(".chk").forEach(inp => {
+    inp.addEventListener("change", () => atualizarPtsPreview(pid));
   });
 }
 
-function calcTotalSeg(el) {
-  const h   = el.querySelector('.num-cardio-h');
-  const min = el.querySelector('.num-cardio-min');
-  const seg = el.querySelector('.num-cardio-seg');
-  return (parseInt(h?.value)||0)*3600 + (parseInt(min?.value)||0)*60 + Math.min(parseInt(seg?.value)||0,59);
+function lerSessoesDoDOM(pid) {
+  const campos = document.getElementById("reg-part-campos");
+  sessoesCardio[pid] = [];
+  campos.querySelectorAll(".sessao-row").forEach(row => {
+    sessoesCardio[pid].push({
+      h: parseInt(row.querySelector(".sc-h")?.value)||0,
+      m: parseInt(row.querySelector(".sc-m")?.value)||0,
+      s: parseInt(row.querySelector(".sc-s")?.value)||0,
+    });
+  });
 }
 
-function getValoresTr(tr) {
-  const chkMusc = tr.querySelector('[name="musculacao"]');
-  const chkCole = tr.querySelector('[name="coletiva"]');
-  const chkPost = tr.querySelector('[name="post_insta"]');
-  const totalSeg = calcTotalSeg(tr);
+function getValoresPart(pid) {
+  lerSessoesDoDOM(pid);
+  const campos = document.getElementById("reg-part-campos");
+  const totalSeg = sessoesParaSegundos(pid);
   return {
-    musculacao:         chkMusc ? chkMusc.checked : false,
+    musculacao:         campos.querySelector('[name="musculacao"]')?.checked || false,
     cardio_segundos:    totalSeg,
     cardio_minutos:     Math.floor(totalSeg/60),
-    atividade_coletiva: chkCole ? chkCole.checked : false,
-    post_insta:         chkPost ? chkPost.checked : false,
+    cardio_sessoes:     sessoesCardio[pid] || [],
+    atividade_coletiva: campos.querySelector('[name="coletiva"]')?.checked || false,
+    post_insta:         campos.querySelector('[name="post_insta"]')?.checked || false,
   };
 }
 
-function getValoresCard(card) {
-  const chkMusc = card.querySelector('[name="musculacao"]');
-  const chkCole = card.querySelector('[name="coletiva"]');
-  const chkPost = card.querySelector('[name="post_insta"]');
-  const totalSeg = calcTotalSeg(card);
-  return {
-    musculacao:         chkMusc ? chkMusc.checked : false,
-    cardio_segundos:    totalSeg,
-    cardio_minutos:     Math.floor(totalSeg/60),
-    atividade_coletiva: chkCole ? chkCole.checked : false,
-    post_insta:         chkPost ? chkPost.checked : false,
-  };
+function atualizarPtsPreview(pid) {
+  lerSessoesDoDOM(pid);
+  const vals = getValoresPart(pid);
+  const el = document.getElementById("reg-pts-prev");
+  if (el) el.textContent = calcPontos(vals);
 }
-
-// ---- SALVAR TODOS ----
-const _debounceTimers = {};
 
 function registrarLog(nome, vals, valsAntigos) {
   const nomes = { musculacao:"Musculação", atividade_coletiva:"Coletiva", post_insta:"Post Insta" };
@@ -1129,65 +1178,9 @@ async function salvarParticipanteAuto(pid, getVals) {
   const nomePart = participantes[pid]?.nome || pid;
   registrarLog(nomePart, vals, valsAntigos);
   await carregarRegistrosDoDia();
+  renderizarPartAtual();
 }
 
-function ligarAutoSalve(el, pid, getVals) {
-  el.querySelectorAll(".chk,.num-cardio-h,.num-cardio-min,.num-cardio-seg").forEach(inp => {
-    inp.addEventListener("change", () => salvarParticipanteAuto(pid, getVals));
-  });
-}
-
-async function salvarTodos() {
-  if (!desafioAtivo) return;
-  const btn = document.getElementById("btn-salvar");
-  btn.innerHTML = `<span class="spinner"></span>Salvando…`; btn.disabled = true;
-
-  const data = document.getElementById("sel-data").value;
-  const sem  = semanaDeData(data);
-  let salvos = 0, atualizados = 0;
-
-  const elementos = [...document.querySelectorAll("#tbody-reg tr[data-pid], #cards-reg-mobile .reg-card[data-pid]")];
-  const pidsVistos = new Set();
-  const elementosUnicos = elementos.filter(el => {
-    if (pidsVistos.has(el.dataset.pid)) return false;
-    pidsVistos.add(el.dataset.pid); return true;
-  });
-
-  for (const el of elementosUnicos) {
-    const pid  = el.dataset.pid;
-    const vals = el.tagName === "TR" ? getValoresTr(el) : getValoresCard(el);
-    const ct   = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
-    const MAX6 = sem ? sem.max : 6;
-    const existente = registrosDia[pid];
-
-    if (!existente) {
-      const lMusc = getLim("musculacao");
-      const lCard = getLim("cardio");
-      const lPost = getLim("post_insta");
-      const lCole = getLim("atividade_coletiva");
-      if (lMusc.periodo === "semana" && ct.musculacao  >= lMusc.max) vals.musculacao        = false;
-      if (lCard.periodo === "semana" && ct.cardio      >= lCard.max) { vals.cardio_segundos = 0; vals.cardio_minutos = 0; }
-      if (lPost.periodo === "semana" && ct.post_insta  >= lPost.max) vals.post_insta        = false;
-      if (lCole.periodo === "semana" && ct.coletiva    >= lCole.max) vals.atividade_coletiva= false;
-      // "dia": sem bloqueio semanal (a estrutura de um registro/dia já limita a 1 por dia)
-    }
-
-    const pontos = calcPontos(vals);
-    const dados  = { participanteId: pid, data, desafioId: desafioAtivoId, ...vals, pontos };
-
-    if (existente) {
-      await setDoc(doc(db,"registros",existente.id), dados);
-      atualizados++;
-    } else {
-      await addDoc(collection(db,"registros"), dados);
-      salvos++;
-    }
-  }
-
-  await carregarRegistrosDoDia();
-  flash(`Salvo! ${salvos} novo(s), ${atualizados} atualizado(s).`);
-  btn.innerHTML = "Salvar todos"; btn.disabled = false;
-}
 
 // ---- PARTICIPANTES CRUD ----
 async function adicionarParticipante(e) {
