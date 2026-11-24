@@ -461,6 +461,9 @@ function fmtHhMmSs(seg) {
   const h = Math.floor(seg/3600), m = Math.floor((seg%3600)/60), s = seg%60;
   return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
+function hojeBR() {
+  return new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+}
 function semanaDeData(d) {
   return (desafioAtivo?.semanas||[]).find(s => d >= s.inicio && d <= s.fim) || null;
 }
@@ -569,7 +572,7 @@ function renderizarListaDesafios() {
     el.innerHTML = `<p style="color:var(--muted);padding:.5rem 0">Nenhum desafio cadastrado ainda. Clique em "+ Novo desafio".</p>`;
     return;
   }
-  const hoje = new Date().toISOString().slice(0,10);
+  const hoje = hojeBR();
   el.innerHTML = todosDesafios.map(d => {
     const status = d.ativo ? "ativo"
       : (d.fim && d.fim < hoje ? "encerrado" : "aguardando");
@@ -817,7 +820,7 @@ function popularSelectDatas() {
   const sel = document.getElementById("sel-data");
   sel.innerHTML = "";
   if (!desafioAtivo) return;
-  const hoje = new Date().toISOString().slice(0,10);
+  const hoje = hojeBR();
   // inclui hoje mesmo que seja antes do início oficial (para cadastro antecipado)
   let datas = datasDesafio();
   if (!datas.includes(hoje)) datas = [hoje, ...datas];

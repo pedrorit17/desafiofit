@@ -215,6 +215,9 @@
     const h = Math.floor(seg/3600), m = Math.floor((seg%3600)/60), s = seg%60;
     return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   }
+  function hojeBR() {
+    return new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+  }
 
   function ptsCardio(min) {
     const faixas = desafioAtivo?.pontuacao?.cardio_faixas || [];
@@ -224,7 +227,7 @@
   }
 
   function semanaAtual() {
-    const hoje = new Date().toISOString().slice(0,10);
+    const hoje = hojeBR();
     return (desafioAtivo?.semanas||[]).find(s => hoje >= s.inicio && hoje <= s.fim) || null;
   }
 
