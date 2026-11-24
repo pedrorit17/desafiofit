@@ -420,7 +420,7 @@ import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore, collection, doc, addDoc, setDoc, deleteDoc,
-  onSnapshot, query, where, getDocs
+  onSnapshot, query, where, getDocs, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const cfg = {
@@ -626,6 +626,7 @@ function renderizarListaDesafios() {
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
             ${!d.ativo ? `<button class="btn btn-verde btn-sm" onclick="ativarDesafio('${d.id}')">▶ Ativar</button>` : ""}
             <button class="btn btn-cinza btn-sm" onclick="abrirFormDesafioById('${d.id}')">Editar</button>
+            <button class="btn btn-sm" style="background:#fff0f0;color:#c0392b;border:1.5px solid #f5b7b1" onclick="limparRegistrosDesafio('${d.id}','${d.nome?.replace(/'/g,"\\'")}')" title="Apaga todos os registros deste desafio, mantendo participantes e configurações">🗑 Limpar registros</button>
           </div>
         </div>
       </div>`;
@@ -772,6 +773,24 @@ async function ativarDesafio(id) {
     setDoc(doc(db,"desafios",d.id), { ativo: d.id === id }, { merge: true })
   ));
   flash("Desafio ativado com sucesso!");
+}
+
+async function limparRegistrosDesafio(id, nome) {
+  if (!confirm(`Apagar TODOS os registros do desafio "${nome}"?\n\nParticipantes e configurações serão mantidos. Esta ação não pode ser desfeita.`)) return;
+  if (!confirm(`Confirmação final: apagar todos os lançamentos de "${nome}"?`)) return;
+  const snap = await getDocs(query(collection(db,"registros"), where("desafioId","==",id)));
+  // apaga em lotes de 500 (limite do Firestore)
+  const lotes = [];
+  let lote = writeBatch(db);
+  let ct = 0;
+  snap.forEach(d => {
+    lote.delete(doc(db,"registros",d.id));
+    ct++;
+    if (ct % 499 === 0) { lotes.push(lote); lote = writeBatch(db); }
+  });
+  if (ct % 499 !== 0) lotes.push(lote);
+  await Promise.all(lotes.map(b => b.commit()));
+  flash(`${ct} registro(s) apagado(s). Participantes e desafio mantidos.`);
 }
 
 // ===== PARTICIPANTES =====
@@ -1201,7 +1220,8 @@ async function removerParticipante(id) {
 }
 
 // expõe funções chamadas por onclick inline (necessário com type="module")
-window.ativarDesafio        = ativarDesafio;
+window.ativarDesafio           = ativarDesafio;
+window.limparRegistrosDesafio  = limparRegistrosDesafio;
 window.abrirFormDesafioById = abrirFormDesafioById;
 window.removerParticipante  = removerParticipante;
 window.removerFaixa         = (i) => { faixasTemp.splice(i,1); renderizarFaixas(); };
