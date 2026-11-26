@@ -197,6 +197,13 @@
     .tag-prob { display:inline-block; background:var(--erro-bg); color:var(--erro); font-size:.7rem; font-weight:700;
       border-radius:10px; padding:.1rem .5rem; margin:.25rem .25rem 0 0; }
     .btn-perigo { background:var(--erro-bg); color:var(--erro); }
+    .reg-botoes { display:flex; gap:.5rem; flex-wrap:wrap; }
+    .aviso-versao { display:flex; align-items:center; justify-content:center; gap:.8rem; flex-wrap:wrap;
+      background:#fff4ec; border-bottom:2px solid var(--laranja); padding:.6rem 1rem; font-weight:600; font-size:.9rem; }
+    .btn-nada { background:var(--surface); color:var(--erro); border:1.5px solid #f1b0b0; }
+    .aviso-nada { display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+      background:var(--erro-bg); color:var(--erro); font-size:.85rem; font-weight:600;
+      border-radius:8px; padding:.45rem .6rem; margin-bottom:.5rem; }
 
     @media (max-width:700px) {
       .tabela-wrap { display:none; }
@@ -239,6 +246,10 @@
     <button class="btn-sair" id="btn-sair">Sair</button>
   </header>
 
+  <div id="aviso-versao" class="aviso-versao" style="display:none">
+    <span>Há uma versão nova do painel.</span>
+    <button class="btn btn-sm btn-laranja" id="btn-atualizar-versao">Atualizar agora</button>
+  </div>
   <main>
     <div id="msg-global"></div>
 
@@ -286,7 +297,10 @@
 
           <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;flex-wrap:wrap;gap:.5rem">
             <span style="font-size:.9rem;color:var(--muted)">Pontos estimados: <strong id="reg-pts-prev" style="color:var(--laranja);font-size:1rem">0</strong></span>
-            <button class="btn btn-laranja" id="btn-salvar-proximo">Salvar e Próximo →</button>
+            <div class="reg-botoes">
+              <button class="btn btn-nada" id="btn-nada" title="Marca que a pessoa não fez nada neste dia">✕ Não fez nada</button>
+              <button class="btn btn-laranja" id="btn-salvar-proximo">Salvar e Próximo →</button>
+            </div>
           </div>
         </div>
         <div id="log-alteracoes" style="margin-top:1rem;display:none">
@@ -570,6 +584,17 @@ document.querySelectorAll(".tab").forEach(tab => {
   tab.addEventListener("click", () => ativarAba(tab.dataset.tab));
 });
 
+// ---- VERSÃO ----
+// aba aberta há tempo continua rodando o código antigo; avisa quando há versão nova publicada
+const VERSAO = "2026-11-26.2";
+async function verificarVersao() {
+  try {
+    const txt = await (await fetch("admin.html", { cache: "no-store" })).text();
+    const m = txt.match(/const VERSAO = "([^"]+)"/);
+    if (m && m[1] !== VERSAO) document.getElementById("aviso-versao").style.display = "flex";
+  } catch (e) { /* sem internet: tenta de novo depois */ }
+}
+
 // ---- INICIAR APP ----
 let appIniciado = false;
 function iniciarApp() {
@@ -586,12 +611,20 @@ function iniciarApp() {
     const eraUltimo = pidRelativo(+1) === pidAtual;
     if (await navegarPara(pidRelativo(+1))) flash(eraUltimo ? "Salvo! Esse é o último participante." : "Salvo!");
   });
+  document.getElementById("btn-nada").addEventListener("click", marcarNada);
   document.getElementById("btn-hist-part").addEventListener("click", () => abrirHistorico(pidAtual));
   document.getElementById("hist-filtro").addEventListener("change", renderizarHistorico);
   document.getElementById("btn-hist-recarregar").addEventListener("click", carregarHistorico);
 
+  document.getElementById("btn-atualizar-versao").addEventListener("click", async () => {
+    await salvarParticipante(pidAtual);
+    location.reload();
+  });
+  setInterval(verificarVersao, 10 * 60 * 1000);
+
   // aba aberta de um dia para o outro: inclui o novo dia na lista de datas
   document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") verificarVersao();
     if (document.visibilityState !== "visible" || !desafioAtivo || carregandoDia || salvando) return;
     const hoje = hojeBR();
     const temHoje = [...document.getElementById("sel-data").options].some(o => o.value === hoje);
@@ -939,6 +972,8 @@ function temAtiv(r, a) {
   return a === "cardio" ? segDe(r) > 0 : !!r[a];
 }
 function registroVazio(r) { return !ATIVS.some(a => temAtiv(r, a)); }
+// marcado de propósito como "não fez nada" (0 pts, não é erro)
+function ehNada(r) { return !!r?.semAtividade; }
 // um documento fixo por desafio+participante+dia: impossível duplicar
 function idRegistro(pid, data) { return `${desafioAtivoId}_${pid}_${data}`; }
 function listaParts() {
@@ -1037,7 +1072,7 @@ function limInfo(ativ, pid) {
 
 function atualizarControles() {
   const ocupado = carregandoDia || salvando;
-  for (const id of ["btn-part-prev", "btn-part-next", "btn-salvar-proximo", "sel-data", "sel-part"]) {
+  for (const id of ["btn-part-prev", "btn-part-next", "btn-salvar-proximo", "btn-nada", "sel-data", "sel-part"]) {
     document.getElementById(id).disabled = ocupado;
   }
   document.getElementById("btn-salvar-proximo").innerHTML =
@@ -1059,12 +1094,16 @@ function renderizarPartAtual() {
   const pid = parts[idx][0];
   pidAtual = pid;
 
-  const lancado = id => (!!registrosDia[id] && !registroVazio(registrosDia[id])) || !!conflitosDia[id];
-  const nLanc = parts.filter(([id]) => lancado(id)).length;
+  const status = id => conflitosDia[id] ? "conflito"
+    : ehNada(registrosDia[id]) ? "nada"
+    : (registrosDia[id] && !registroVazio(registrosDia[id])) ? "fez" : "pendente";
+  const icone = { conflito: "⚠️ ", nada: "❌ ", fez: "✅ ", pendente: "" };
+  const qtd = s => parts.filter(([id]) => status(id) === s).length;
   document.getElementById("sel-part").innerHTML = parts.map(([id, p]) =>
-    `<option value="${id}" ${id === pid ? "selected" : ""}>${lancado(id) ? "✅ " : ""}${esc(p.nome)}</option>`).join("");
+    `<option value="${id}" ${id === pid ? "selected" : ""}>${icone[status(id)]}${esc(p.nome)}</option>`).join("");
   document.getElementById("reg-part-progresso").textContent = carregandoDia
-    ? "carregando…" : `${idx + 1} de ${parts.length} · ${nLanc} lançado(s) neste dia`;
+    ? "carregando…"
+    : `${idx + 1} de ${parts.length} · ✅ ${qtd("fez")} · ❌ ${qtd("nada")} · faltam ${qtd("pendente") + qtd("conflito")}`;
 
   const campos = document.getElementById("reg-part-campos");
   const ptsEl  = document.getElementById("reg-pts-prev");
@@ -1098,7 +1137,9 @@ function renderizarPartAtual() {
 
   campos.innerHTML = `
     <div style="background:var(--surface);border-radius:10px;padding:.8rem 1rem">
-      ${r && !registroVazio(r) ? `<div style="font-size:.8rem;color:var(--verde);margin-bottom:.4rem">✅ Já lançado em ${fmtData(dataAtual)}</div>` : ""}
+      ${ehNada(r) ? `<div class="aviso-nada"><span>❌ Marcado: não fez nada em ${fmtData(dataAtual)}</span>
+          <button type="button" class="btn btn-cinza btn-sm" id="btn-desfazer-nada">Desfazer</button></div>`
+        : r && !registroVazio(r) ? `<div style="font-size:.8rem;color:var(--verde);margin-bottom:.4rem">✅ Já lançado em ${fmtData(dataAtual)}</div>` : ""}
       ${linha("💪 Musculação", "musculacao")}
       <div class="reg-linha" style="display:block">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
@@ -1123,6 +1164,7 @@ function renderizarPartAtual() {
     atualizarPreview(pid);
   });
   campos.querySelectorAll(".chk").forEach(inp => inp.addEventListener("change", () => atualizarPreview(pid)));
+  document.getElementById("btn-desfazer-nada")?.addEventListener("click", () => desfazerNada(pid));
   atualizarPreview(pid);
 }
 
@@ -1187,6 +1229,10 @@ function registrarLog(nome, data, vals, antes) {
   }
   const segN = vals.cardio_segundos || 0, segV = segDe(antes);
   if (segN !== segV) itens.push(segN > 0 ? `⏱ Cardio ${fmtHhMmSs(segN)}` : "❌ Cardio removido");
+  logar(nome, data, itens);
+}
+
+function logar(nome, data, itens) {
   if (!itens.length) return;
   const hora  = new Date().toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
   const lista = document.getElementById("log-lista");
@@ -1251,6 +1297,63 @@ async function salvarParticipante(pid) {
   }
 }
 
+// marca o participante exibido como "não fez nada" no dia e vai para o próximo
+async function marcarNada() {
+  const pid = pidAtual;
+  const campos = document.getElementById("reg-part-campos");
+  if (!desafioAtivo || carregandoDia || salvando || erroCarga || !pid || campos.dataset.pid !== pid) return;
+  const antes = registrosDia[pid] || null;
+  const nome  = participantes[pid]?.nome || "?";
+  if (!ehNada(antes)) {
+    const temAlgo = !registroVazio(getValoresPart(pid)) || (antes && !registroVazio(antes));
+    if (temAlgo && !confirm(`${nome} tem atividade marcada neste dia. Trocar por "não fez nada"?`)) return;
+    const data = dataAtual, novoId = idRegistro(pid, data);
+    const novo = { participanteId: pid, data, desafioId: desafioAtivoId, semAtividade: true,
+      musculacao: false, cardio_segundos: 0, cardio_minutos: 0, cardio_sessoes: [],
+      atividade_coletiva: false, post_insta: false, pontos: 0, atualizadoEm: new Date().toISOString() };
+    salvando = true; atualizarControles();
+    let ok = false;
+    try {
+      const batch = writeBatch(db);
+      batch.set(doc(db, "registros", novoId), novo);
+      if (antes && antes.id !== novoId) batch.delete(doc(db, "registros", antes.id));
+      await batch.commit();
+      ok = true;
+    } catch (e) {
+      flash("Não foi possível salvar (verifique a internet) e tente de novo.", false);
+    } finally {
+      salvando = false; atualizarControles();
+    }
+    if (!ok) return;
+    if (dataAtual === data) { registrosDia[pid] = { id: novoId, ...novo }; sessoesCardio[pid] = null; }
+    logar(nome, data, ["❌ não fez nada"]);
+  }
+  const prox = pidRelativo(+1);
+  pidAtual = prox;
+  renderizarPartAtual();
+  flash(prox === pid ? `${nome}: ❌ não fez nada. Esse é o último participante.` : `${nome}: ❌ não fez nada`);
+}
+
+async function desfazerNada(pid) {
+  const r = registrosDia[pid];
+  if (!ehNada(r) || carregandoDia || salvando) return;
+  const data = dataAtual;
+  salvando = true; atualizarControles();
+  let ok = false;
+  try {
+    await deleteDoc(doc(db, "registros", r.id));
+    ok = true;
+  } catch (e) {
+    flash("Não foi possível desfazer (verifique a internet).", false);
+  } finally {
+    salvando = false; atualizarControles();
+  }
+  if (!ok) return;
+  if (dataAtual === data) delete registrosDia[pid];
+  logar(participantes[pid]?.nome || "?", data, ["↩ desfeito o ❌"]);
+  renderizarPartAtual();
+}
+
 function pidRelativo(delta) {
   const parts = listaParts();
   const i = parts.findIndex(([id]) => id === pidAtual);
@@ -1313,7 +1416,7 @@ function nomeDe(pid) { return participantes[pid]?.nome || "(participante removid
 function problemasRegistro(r, qtdNoDia) {
   const p = [];
   if (qtdNoDia > 1) p.push("duplicado");
-  if (registroVazio(r)) p.push("vazio");
+  if (registroVazio(r) && !ehNada(r)) p.push("vazio");
   if ((r.cardio_sessoes || []).some(s => (s.h || 0) >= 4) || segDe(r) >= 6 * 3600) p.push("cardio alto");
   if (r.data > hojeBR()) p.push("data futura");
   else if (r.data < desafioAtivo.inicio || r.data > desafioAtivo.fim) p.push("fora do período");
@@ -1322,6 +1425,7 @@ function problemasRegistro(r, qtdNoDia) {
 }
 
 function resumoAtivs(r) {
+  if (ehNada(r)) return "❌ não fez nada";
   const p = [];
   if (r.musculacao) p.push("💪 Musculação");
   const seg = segDe(r);
@@ -1342,7 +1446,7 @@ function renderizarHistorico() {
   for (const r of histRegs) porDia[chave(r)] = (porDia[chave(r)] || 0) + 1;
   const itens  = histRegs.map(r => ({ r, prob: problemasRegistro(r, porDia[chave(r)]) }));
   const nProb  = itens.filter(x => x.prob.length).length;
-  const vazios = histRegs.filter(registroVazio);
+  const vazios = histRegs.filter(r => registroVazio(r) && !ehNada(r));
 
   const atual = histFiltroInicial || sel.value || (nProb ? "problemas" : "todos");
   histFiltroInicial = null;
@@ -1420,7 +1524,7 @@ async function apagarRegistro(id) {
 }
 
 async function apagarVazios() {
-  const alvo = histRegs.filter(registroVazio);
+  const alvo = histRegs.filter(r => registroVazio(r) && !ehNada(r));
   if (!alvo.length || !confirm(`Apagar ${alvo.length} lançamento(s) sem nenhuma atividade marcada?`)) return;
   try {
     const batch = writeBatch(db);
@@ -1430,7 +1534,7 @@ async function apagarVazios() {
     flash("Não foi possível apagar (verifique a internet).", false);
     return;
   }
-  histRegs = histRegs.filter(r => !registroVazio(r));
+  histRegs = histRegs.filter(r => !alvo.includes(r));
   renderizarHistorico();
   flash(`${alvo.length} lançamento(s) vazio(s) apagado(s).`);
   if (alvo.some(r => r.data === dataAtual)) carregarRegistrosDoDia();
