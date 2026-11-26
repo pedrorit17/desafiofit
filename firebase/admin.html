@@ -165,6 +165,39 @@
     .reg-card .rc-pts { font-weight:700; color:var(--laranja); font-size:1rem; }
     .reg-card .rc-limite { font-size:.75rem; color:var(--erro); }
 
+    /* mensagens: fixas embaixo para aparecer mesmo com a tela rolada (celular) */
+    #msg-global { position:fixed; left:1rem; right:1rem; bottom:1rem; z-index:50; max-width:560px; margin:0 auto; }
+    #msg-global .alert { margin:0; box-shadow:0 4px 16px rgba(0,0,0,.15); }
+
+    /* registrar */
+    .sel-part { width:100%; font-weight:700; font-size:1rem; text-align:center; padding:.45rem .5rem;
+      border:1.5px solid var(--border); border-radius:8px; background:white; }
+    .link-btn { background:none; border:none; color:var(--laranja); font-size:.78rem; cursor:pointer; padding:0; text-decoration:underline; }
+    .reg-linha { display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+      padding:.55rem 0; border-bottom:1px solid var(--border); font-size:.95rem; }
+    .reg-linha:last-child { border-bottom:none; }
+    .reg-linha input[type="checkbox"] { width:22px; height:22px; accent-color:var(--laranja); }
+    .reg-limite { color:var(--erro); font-size:.82rem; }
+    .sessao-row { display:flex; align-items:center; gap:.3rem; margin-bottom:.35rem; }
+    .sessao-row input { width:3.3rem; padding:.35rem .3rem; border:1.5px solid var(--border); border-radius:6px;
+      text-align:center; font-size:16px; }
+    .sessao-row span { font-size:.85rem; color:var(--muted); }
+    button:disabled, select:disabled { opacity:.55; cursor:default; }
+    .log-item { font-size:.82rem; padding:.3rem .6rem; background:#f5f5f5; border-radius:6px;
+      display:flex; justify-content:space-between; gap:.5rem; }
+
+    /* histórico */
+    .hist-grupo { padding:1rem 1.1rem; margin-bottom:.8rem; }
+    .hist-cab { display:flex; justify-content:space-between; gap:.5rem; flex-wrap:wrap; margin-bottom:.4rem; }
+    .hist-cab span { font-size:.82rem; color:var(--muted); }
+    .hist-linha { display:flex; align-items:center; gap:.6rem; padding:.55rem 0; border-top:1px solid var(--border); font-size:.88rem; }
+    .hist-linha.com-prob { background:#fff6f6; margin:0 -.6rem; padding:.55rem .6rem; }
+    .hist-ativs { color:var(--muted); font-size:.82rem; margin-top:.1rem; }
+    .hist-acoes { display:flex; gap:.35rem; flex-shrink:0; }
+    .tag-prob { display:inline-block; background:var(--erro-bg); color:var(--erro); font-size:.7rem; font-weight:700;
+      border-radius:10px; padding:.1rem .5rem; margin:.25rem .25rem 0 0; }
+    .btn-perigo { background:var(--erro-bg); color:var(--erro); }
+
     @media (max-width:700px) {
       .tabela-wrap { display:none; }
       .cards-reg-mobile { display:flex; }
@@ -212,6 +245,7 @@
     <div class="tabs">
       <button class="tab ativo" data-tab="registrar">Registrar Dia</button>
       <button class="tab" data-tab="participantes">Participantes</button>
+      <button class="tab" data-tab="historico">📋 Histórico</button>
       <button class="tab" data-tab="desafios">⚙️ Desafios</button>
     </div>
 
@@ -238,9 +272,12 @@
         <div id="reg-part-wrap" style="display:none">
           <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem">
             <button class="btn btn-cinza btn-sm" id="btn-part-prev">← Anterior</button>
-            <div style="flex:1;text-align:center">
-              <div id="reg-part-nome" style="font-weight:700;font-size:1.05rem"></div>
-              <div id="reg-part-progresso" style="font-size:.78rem;color:var(--muted)"></div>
+            <div style="flex:1;text-align:center;min-width:0">
+              <select id="sel-part" class="sel-part" aria-label="Participante"></select>
+              <div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">
+                <span id="reg-part-progresso"></span>
+                · <button type="button" class="link-btn" id="btn-hist-part">📋 histórico</button>
+              </div>
             </div>
             <button class="btn btn-cinza btn-sm" id="btn-part-next">Próximo →</button>
           </div>
@@ -289,6 +326,23 @@
           <div id="lista-participantes"><p style="color:var(--muted)">Carregando…</p></div>
         </div>
       </div>
+    </div>
+
+    <!-- ===== PAINEL: HISTÓRICO ===== -->
+    <div class="painel" id="painel-historico">
+      <div class="config-dia">
+        <div class="campo" style="flex:1;min-width:200px">
+          <label for="hist-filtro">Mostrar</label>
+          <select id="hist-filtro"></select>
+        </div>
+        <button class="btn btn-cinza btn-sm" id="btn-hist-recarregar">↻ Recarregar</button>
+      </div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:.8rem">
+        Cada pessoa deve ter no máximo um lançamento por dia. Use <strong>Editar</strong> para corrigir valores
+        e <strong>Apagar</strong> para remover lançamentos errados ou duplicados.
+      </p>
+      <div id="hist-resumo" style="margin-bottom:.8rem"></div>
+      <div id="hist-lista"></div>
     </div>
 
     <!-- ===== PAINEL: DESAFIOS ===== -->
@@ -479,9 +533,14 @@ function fmtData(d) { const [y,m,dd]=d.split("-"); return `${dd}/${m}/${y}`; }
 function diaSem(d)  { return DIAS_SEMANA[new Date(d+"T12:00:00").getDay()]; }
 
 // ---- UTILS UI ----
+let flashTimer = null;
 function flash(msg, ok=true, el=document.getElementById("msg-global")) {
-  el.innerHTML = `<div class="alert ${ok?"alert-ok":"alert-err"}">${msg}</div>`;
-  setTimeout(() => { el.innerHTML = ""; }, 4000);
+  el.innerHTML = `<div class="alert ${ok?"alert-ok":"alert-err"}">${esc(msg)}</div>`;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { el.innerHTML = ""; }, ok ? 2500 : 6000);
+}
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 }
 
 // ---- AUTENTICAÇÃO ----
@@ -508,52 +567,46 @@ onAuthStateChanged(auth, user => {
 
 // ---- TABS ----
 document.querySelectorAll(".tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab,.painel").forEach(el => el.classList.remove("ativo"));
-    tab.classList.add("ativo");
-    document.getElementById("painel-" + tab.dataset.tab).classList.add("ativo");
-  });
+  tab.addEventListener("click", () => ativarAba(tab.dataset.tab));
 });
 
 // ---- INICIAR APP ----
+let appIniciado = false;
 function iniciarApp() {
+  if (appIniciado) return;
+  appIniciado = true;
   escutarDesafios();
-  document.getElementById("sel-data").addEventListener("change", carregarRegistrosDoDia);
+  document.getElementById("sel-data").addEventListener("change", e => trocarData(e.target.value));
+  document.getElementById("sel-part").addEventListener("change", e => navegarPara(e.target.value));
   document.getElementById("form-part").addEventListener("submit", adicionarParticipante);
 
-  document.getElementById("btn-part-prev").addEventListener("click", async () => {
-    const parts = Object.entries(participantes);
-    const [pid] = parts[partIdx];
-    lerSessoesDoDOM(pid);
-    await salvarParticipanteAuto(pid, () => getValoresPart(pid));
-    if (partIdx > 0) partIdx--;
-    renderizarPartAtual();
-  });
-  document.getElementById("btn-part-next").addEventListener("click", async () => {
-    const parts = Object.entries(participantes);
-    const [pid] = parts[partIdx];
-    lerSessoesDoDOM(pid);
-    await salvarParticipanteAuto(pid, () => getValoresPart(pid));
-    if (partIdx < parts.length - 1) partIdx++;
-    renderizarPartAtual();
-  });
+  document.getElementById("btn-part-prev").addEventListener("click", () => navegarPara(pidRelativo(-1)));
+  document.getElementById("btn-part-next").addEventListener("click", () => navegarPara(pidRelativo(+1)));
   document.getElementById("btn-salvar-proximo").addEventListener("click", async () => {
-    const parts = Object.entries(participantes);
-    if (!parts.length) return;
-    const [pid] = parts[partIdx];
-    const btn = document.getElementById("btn-salvar-proximo");
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner"></span>Salvando…`;
-    await salvarParticipanteAuto(pid, () => getValoresPart(pid));
-    // avançar para o próximo (ou ficar no último)
-    if (partIdx < parts.length - 1) {
-      partIdx++;
-    }
-    sessoesCardio[parts[partIdx]?.[0]] = undefined; // força reload do próximo
-    btn.disabled = false;
-    btn.innerHTML = "Salvar e Próximo →";
-    flash("Salvo!");
-    renderizarPartAtual();
+    const eraUltimo = pidRelativo(+1) === pidAtual;
+    if (await navegarPara(pidRelativo(+1))) flash(eraUltimo ? "Salvo! Esse é o último participante." : "Salvo!");
+  });
+  document.getElementById("btn-hist-part").addEventListener("click", () => abrirHistorico(pidAtual));
+  document.getElementById("hist-filtro").addEventListener("change", renderizarHistorico);
+  document.getElementById("btn-hist-recarregar").addEventListener("click", carregarHistorico);
+
+  // aba aberta de um dia para o outro: inclui o novo dia na lista de datas
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || !desafioAtivo || carregandoDia || salvando) return;
+    const hoje = hojeBR();
+    const temHoje = [...document.getElementById("sel-data").options].some(o => o.value === hoje);
+    if (!temHoje && hoje <= desafioAtivo.fim) popularSelectDatas();
+  });
+
+  document.getElementById("tbody-faixas").addEventListener("change", e => {
+    const i = +e.target.dataset.i;
+    if (e.target.dataset.campo) faixasTemp[i][e.target.dataset.campo] = +e.target.value;
+  });
+  document.getElementById("tbody-faixas").addEventListener("click", e => {
+    if (e.target.dataset.rmFaixa != null) { faixasTemp.splice(+e.target.dataset.rmFaixa, 1); renderizarFaixas(); }
+  });
+  document.getElementById("tbody-semanas").addEventListener("change", e => {
+    if (e.target.dataset.i != null) semanasTemp[+e.target.dataset.i].max = +e.target.value;
   });
   document.getElementById("btn-novo-desafio").addEventListener("click", () => abrirFormDesafio());
   document.getElementById("btn-gerar-semanas").addEventListener("click", gerarSemanasAuto);
@@ -624,7 +677,7 @@ function renderizarListaDesafios() {
       <div class="desafio-item${d.ativo?" ativo":""}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
           <div>
-            <span class="d-nome">${d.nome||"Sem nome"}</span>
+            <span class="d-nome">${esc(d.nome||"Sem nome")}</span>
             <span class="status-badge" style="background:${bg};color:${cor}">${status}</span>
             ${placarTag}
             <div class="d-meta">${d.inicio?fmtData(d.inicio):""} → ${d.fim?fmtData(d.fim):""} · Musculação ${ptsMusc}pts · Coletiva ${ptsCole}pts · Post ${ptsPo}pts</div>
@@ -632,7 +685,7 @@ function renderizarListaDesafios() {
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
             ${!d.ativo ? `<button class="btn btn-verde btn-sm" onclick="ativarDesafio('${d.id}')">▶ Ativar</button>` : ""}
             <button class="btn btn-cinza btn-sm" onclick="abrirFormDesafioById('${d.id}')">Editar</button>
-            <button class="btn btn-sm" style="background:#fff0f0;color:#c0392b;border:1.5px solid #f5b7b1" onclick="limparRegistrosDesafio('${d.id}','${d.nome?.replace(/'/g,"\\'")}')" title="Apaga todos os registros deste desafio, mantendo participantes e configurações">🗑 Limpar registros</button>
+            <button class="btn btn-sm" style="background:#fff0f0;color:#c0392b;border:1.5px solid #f5b7b1" onclick="limparRegistrosDesafio('${d.id}')" title="Apaga todos os registros deste desafio, mantendo participantes e configurações">🗑 Limpar registros</button>
           </div>
         </div>
       </div>`;
@@ -644,14 +697,8 @@ function abrirFormDesafioById(id) {
   if (d) abrirFormDesafio(d);
 }
 
-function ativarAbaDesafios() {
-  document.querySelectorAll(".tab,.painel").forEach(el => el.classList.remove("ativo"));
-  document.querySelector('.tab[data-tab="desafios"]')?.classList.add("ativo");
-  document.getElementById("painel-desafios")?.classList.add("ativo");
-}
-
 function abrirFormDesafio(desafio = null) {
-  ativarAbaDesafios();
+  ativarAba("desafios");
   editandoDesafioId = desafio?.id || null;
   document.getElementById("form-desafio-titulo").textContent = desafio ? "Editar Desafio" : "Novo Desafio";
   document.getElementById("form-desafio-wrap").style.display = "block";
@@ -707,12 +754,10 @@ function gerarSemanasAuto() {
 function renderizarFaixas() {
   document.getElementById("tbody-faixas").innerHTML = faixasTemp.map((f,i) => `
     <tr>
-      <td><input type="number" min="0" max="300" value="${f.de}"
-        onchange="faixasTemp[${i}].de=+this.value"> min</td>
-      <td><input type="number" min="0" max="99" value="${f.pts}"
-        onchange="faixasTemp[${i}].pts=+this.value"> pts</td>
-      <td><button style="background:var(--erro-bg);color:var(--erro);border:none;border-radius:6px;padding:.2rem .5rem;cursor:pointer"
-        onclick="window.removerFaixa(${i})">✕</button></td>
+      <td><input type="number" min="0" max="300" value="${f.de}" data-i="${i}" data-campo="de"> min</td>
+      <td><input type="number" min="0" max="99" value="${f.pts}" data-i="${i}" data-campo="pts"> pts</td>
+      <td><button type="button" style="background:var(--erro-bg);color:var(--erro);border:none;border-radius:6px;padding:.2rem .5rem;cursor:pointer"
+        data-rm-faixa="${i}">✕</button></td>
     </tr>`).join("");
 }
 
@@ -727,8 +772,7 @@ function renderizarSemanas() {
     <tr>
       <td>${s.num}ª semana</td>
       <td>${fmtData(s.inicio)} → ${fmtData(s.fim)}</td>
-      <td><input type="number" min="1" max="7" value="${s.max}"
-        onchange="semanasTemp[${i}].max=+this.value"> /semana</td>
+      <td><input type="number" min="1" max="7" value="${s.max}" data-i="${i}"> /semana</td>
     </tr>`).join("");
 }
 
@@ -737,9 +781,10 @@ async function salvarDesafio() {
   const num   = parseInt(document.getElementById("d-num").value) || 1;
   const inicio= document.getElementById("d-inicio").value;
   const fim   = document.getElementById("d-fim").value;
-  const ptsMu = parseInt(document.getElementById("d-pts-musc").value) ?? 20;
-  const ptsCo = parseInt(document.getElementById("d-pts-cole").value) ?? 5;
-  const ptsPo = parseInt(document.getElementById("d-pts-post").value) ?? 2;
+  const int = (id, def) => { const n = parseInt(document.getElementById(id).value); return Number.isNaN(n) ? def : n; };
+  const ptsMu = int("d-pts-musc", 20);
+  const ptsCo = int("d-pts-cole", 5);
+  const ptsPo = int("d-pts-post", 2);
 
   if (!nome)  { flash("Informe o nome do desafio.", false); return; }
   if (!inicio||!fim) { flash("Informe as datas de início e fim.", false); return; }
@@ -781,7 +826,8 @@ async function ativarDesafio(id) {
   flash("Desafio ativado com sucesso!");
 }
 
-async function limparRegistrosDesafio(id, nome) {
+async function limparRegistrosDesafio(id) {
+  const nome = todosDesafios.find(d => d.id === id)?.nome || "";
   if (!confirm(`Apagar TODOS os registros do desafio "${nome}"?\n\nParticipantes e configurações serão mantidos. Esta ação não pode ser desfeita.`)) return;
   if (!confirm(`Confirmação final: apagar todos os lançamentos de "${nome}"?`)) return;
   const snap = await getDocs(query(collection(db,"registros"), where("desafioId","==",id)));
@@ -797,6 +843,7 @@ async function limparRegistrosDesafio(id, nome) {
   if (ct % 499 !== 0) lotes.push(lote);
   await Promise.all(lotes.map(b => b.commit()));
   flash(`${ct} registro(s) apagado(s). Participantes e desafio mantidos.`);
+  if (id === desafioAtivoId) carregarRegistrosDoDia();
 }
 
 // ===== PARTICIPANTES =====
@@ -820,26 +867,30 @@ function escutarParticipantes() {
 
 function renderizarListaParticipantes() {
   const lista = document.getElementById("lista-participantes");
-  const parts = Object.entries(participantes);
+  const parts = listaParts();
   if (!parts.length) { lista.innerHTML = "<p style='color:var(--muted)'>Nenhum participante ainda.</p>"; return; }
   lista.innerHTML = `<div class="lista-parts">` +
     parts.map(([id, p]) => `
       <div class="part-item" id="part-item-${id}">
-        <div style="flex:1">
-          <div class="nome">${p.nome}</div>
-          <div class="insta">${p.instagram?"@"+p.instagram:""}${p.gymratsUser?" · "+p.gymratsUser:""}</div>
+        <div style="flex:1;min-width:0">
+          <div class="nome">${esc(p.nome)}</div>
+          <div class="insta">${p.instagram?"@"+esc(p.instagram):""}${p.gymratsUser?" · "+esc(p.gymratsUser):""}</div>
         </div>
-        <button class="btn-editar-part" data-id="${id}" style="background:none;border:1.5px solid var(--border);border-radius:6px;padding:.25rem .6rem;cursor:pointer;font-size:.8rem;margin-right:.4rem">✏️</button>
-        <button class="btn-remover" data-id="${id}">✕</button>
+        <button class="btn-hist-part" data-id="${id}" title="Histórico de lançamentos" style="background:none;border:1.5px solid var(--border);border-radius:6px;padding:.25rem .6rem;cursor:pointer;font-size:.8rem">📋</button>
+        <button class="btn-editar-part" data-id="${id}" title="Editar" style="background:none;border:1.5px solid var(--border);border-radius:6px;padding:.25rem .6rem;cursor:pointer;font-size:.8rem">✏️</button>
+        <button class="btn-remover" data-id="${id}" title="Remover">✕</button>
       </div>
-      <div class="part-edit-form" id="part-edit-${id}" style="display:none;padding:.6rem .8rem;background:var(--cinza-bg,#f8f8f8);border-radius:8px;margin-bottom:.5rem;gap:.5rem;flex-wrap:wrap;align-items:center">
-        <input id="edit-nome-${id}" value="${p.nome}" placeholder="Nome" style="flex:1;min-width:140px;padding:.35rem .6rem;border:1.5px solid var(--border);border-radius:6px">
-        <input id="edit-insta-${id}" value="${p.instagram||''}" placeholder="Instagram (sem @)" style="flex:1;min-width:120px;padding:.35rem .6rem;border:1.5px solid var(--border);border-radius:6px">
-        <input id="edit-gym-${id}" value="${p.gymratsUser||''}" placeholder="GymRats user" style="flex:1;min-width:120px;padding:.35rem .6rem;border:1.5px solid var(--border);border-radius:6px">
+      <div class="part-edit-form" id="part-edit-${id}" style="display:none;padding:.6rem .8rem;background:#f8f8f8;border-radius:8px;margin-bottom:.5rem;gap:.5rem;flex-wrap:wrap;align-items:center">
+        <input id="edit-nome-${id}" value="${esc(p.nome)}" placeholder="Nome" style="flex:1;min-width:140px;padding:.35rem .6rem;border:1.5px solid var(--border);border-radius:6px">
+        <input id="edit-insta-${id}" value="${esc(p.instagram)}" placeholder="Instagram (sem @)" style="flex:1;min-width:120px;padding:.35rem .6rem;border:1.5px solid var(--border);border-radius:6px">
+        <input id="edit-gym-${id}" value="${esc(p.gymratsUser)}" placeholder="GymRats user" style="flex:1;min-width:120px;padding:.35rem .6rem;border:1.5px solid var(--border);border-radius:6px">
         <button class="btn btn-verde btn-sm btn-salvar-part" data-id="${id}">Salvar</button>
         <button class="btn btn-cinza btn-sm btn-cancelar-part" data-id="${id}">Cancelar</button>
       </div>`).join("") +
   `</div>`;
+  lista.querySelectorAll(".btn-hist-part").forEach(btn => {
+    btn.addEventListener("click", () => abrirHistorico(btn.dataset.id));
+  });
   lista.querySelectorAll(".btn-remover").forEach(btn => {
     btn.addEventListener("click", () => removerParticipante(btn.dataset.id));
   });
@@ -869,368 +920,521 @@ async function editarParticipante(id) {
 }
 
 // ===== REGISTRAR DIA =====
+const ATIVS = ["musculacao", "cardio", "atividade_coletiva", "post_insta"];
+let dataAtual     = null;   // data cujos lançamentos estão carregados na tela
+let seqCarga      = 0;      // descarta respostas de cargas antigas (troca rápida de data)
+let carregandoDia = false;
+let erroCarga     = false;
+let salvando      = false;
+let conflitosDia  = {};     // pid -> [registros] quando há mais de um lançamento no mesmo dia
+let pidAtual      = null;
+let sessoesCardio = {};     // pid -> [{h,m,s}]
+
+function segDe(r) {
+  if (!r) return 0;
+  return r.cardio_segundos != null ? r.cardio_segundos : (r.cardio_minutos || 0) * 60;
+}
+function temAtiv(r, a) {
+  if (!r) return false;
+  return a === "cardio" ? segDe(r) > 0 : !!r[a];
+}
+function registroVazio(r) { return !ATIVS.some(a => temAtiv(r, a)); }
+// um documento fixo por desafio+participante+dia: impossível duplicar
+function idRegistro(pid, data) { return `${desafioAtivoId}_${pid}_${data}`; }
+function listaParts() {
+  return Object.entries(participantes)
+    .sort((a, b) => (a[1].nome || "").localeCompare(b[1].nome || "", "pt-BR"));
+}
+function segSessao(s) { return (s.h || 0) * 3600 + (s.m || 0) * 60 + (s.s || 0); }
+function totalSessoes(lista) { return (lista || []).reduce((acc, s) => acc + segSessao(s), 0); }
+function sessoesIniciais(r) {
+  if (r?.cardio_sessoes?.length) return r.cardio_sessoes.map(s => ({ ...s }));
+  const seg = segDe(r);
+  return seg > 0 ? [{ h: Math.floor(seg / 3600), m: Math.floor((seg % 3600) / 60), s: seg % 60 }] : [];
+}
+function caixa(html) {
+  return `<div style="background:var(--surface);border-radius:10px;padding:1rem;color:var(--muted)">${html}</div>`;
+}
+
 function popularSelectDatas() {
   const sel = document.getElementById("sel-data");
   sel.innerHTML = "";
   if (!desafioAtivo) return;
   const hoje = hojeBR();
-  // inclui hoje mesmo que seja antes do início oficial (para cadastro antecipado)
-  let datas = datasDesafio();
-  if (!datas.includes(hoje)) datas = [hoje, ...datas];
-  datas.forEach(d => {
-    const opt = document.createElement("option");
-    opt.value = d;
-    opt.textContent = `${diaSem(d)} · ${fmtData(d)}`;
-    if (d === hoje) opt.selected = true;
-    sel.appendChild(opt);
-  });
-  atualizarInfoSemana();
+  // só até hoje; antes do início mostra hoje para cadastro antecipado
+  let datas = hoje < desafioAtivo.inicio ? [hoje] : datasDesafio().filter(d => d <= hoje);
+  if (!datas.length) datas = [hoje];
+  const alvo = datas.includes(dataAtual) ? dataAtual : (datas.includes(hoje) ? hoje : datas[datas.length - 1]);
+  sel.innerHTML = datas.map(d =>
+    `<option value="${d}" ${d === alvo ? "selected" : ""}>${diaSem(d)} · ${fmtData(d)}</option>`).join("");
   carregarRegistrosDoDia();
 }
 
 function atualizarInfoSemana() {
-  const data = document.getElementById("sel-data").value;
-  const sem  = semanaDeData(data);
+  const sem = semanaDeData(dataAtual);
   document.getElementById("info-semana").textContent =
     sem ? `Semana ${sem.num} · máx ${sem.max} check-ins` : "";
 }
 
 async function carregarRegistrosDoDia() {
   if (!desafioAtivo) return;
-  // limpa ANTES dos awaits para evitar que sessões do dia anterior sejam lidas pelo DOM
-  sessoesCardio = {};
-  registrosDia  = {};
-  contagemSemana = {};
-  renderizarPartAtual(); // zera o formulário imediatamente
+  const minha = ++seqCarga;
+  const data  = document.getElementById("sel-data").value;
+  const sem   = semanaDeData(data);
+  dataAtual = data;
+  carregandoDia = true; erroCarga = false;
+  registrosDia = {}; conflitosDia = {}; contagemSemana = {}; sessoesCardio = {};
   atualizarInfoSemana();
-  const data = document.getElementById("sel-data").value;
-  const sem  = semanaDeData(data);
-
-  const snapDia = await getDocs(query(collection(db,"registros"), where("data","==",data)));
-  snapDia.forEach(d => {
-    const r = d.data();
-    // filtra por desafio (retrocompat: inclui sem desafioId)
-    if (!r.desafioId || r.desafioId === desafioAtivoId) {
-      registrosDia[r.participanteId] = { id: d.id, ...r };
-    }
-  });
-
-  if (sem) {
-    const snapSem = await getDocs(query(collection(db,"registros"),
-      where("data",">=",sem.inicio), where("data","<=",sem.fim)));
-    snapSem.forEach(d => {
-      const r = d.data();
-      if (r.data === data) return;
-      if (r.desafioId && r.desafioId !== desafioAtivoId) return;
-      const pid = r.participanteId;
-      if (!contagemSemana[pid]) contagemSemana[pid] = {musculacao:0,cardio:0,post_insta:0,coletiva:0};
-      if (r.musculacao) contagemSemana[pid].musculacao++;
-      const seg = r.cardio_segundos != null ? r.cardio_segundos : (r.cardio_minutos||0)*60;
-      if (seg > 0) contagemSemana[pid].cardio++;
-      if (r.post_insta)         contagemSemana[pid].post_insta++;
-      if (r.atividade_coletiva) contagemSemana[pid].coletiva++;
+  renderizarPartAtual();
+  try {
+    // uma consulta só: a semana inteira já inclui o dia
+    const q = sem
+      ? query(collection(db, "registros"), where("data", ">=", sem.inicio), where("data", "<=", sem.fim))
+      : query(collection(db, "registros"), where("data", "==", data));
+    const snap = await getDocs(q);
+    if (minha !== seqCarga) return;
+    const doDia = {}, dias = {};
+    snap.forEach(d => {
+      const r = { id: d.id, ...d.data() };
+      if (r.desafioId !== desafioAtivoId) return;
+      if (r.data === data) { (doDia[r.participanteId] ??= []).push(r); return; }
+      // conta DIAS distintos por atividade (duplicados não inflam)
+      const c = (dias[r.participanteId] ??= Object.fromEntries(ATIVS.map(a => [a, new Set()])));
+      for (const a of ATIVS) if (temAtiv(r, a)) c[a].add(r.data);
     });
+    for (const [pid, arr] of Object.entries(doDia)) {
+      if (arr.length === 1) registrosDia[pid] = arr[0];
+      else conflitosDia[pid] = arr;
+    }
+    for (const [pid, c] of Object.entries(dias)) {
+      contagemSemana[pid] = Object.fromEntries(ATIVS.map(a => [a, c[a].size]));
+    }
+  } catch (e) {
+    if (minha !== seqCarga) return;
+    erroCarga = true;
   }
-
-  renderizarTabelaRegistro();
+  carregandoDia = false;
+  renderizarPartAtual();
 }
 
-// Retorna { max, periodo } para uma atividade, respeitando o teto da semana atual
+// Retorna { max, periodo } para uma atividade, respeitando o teto da semana
 function getLim(atividade, data) {
   const def = { musculacao:{max:6,periodo:"semana"}, cardio:{max:6,periodo:"semana"}, post_insta:{max:6,periodo:"semana"}, atividade_coletiva:{max:1,periodo:"semana"} };
   const lim = { ...(desafioAtivo?.limites?.[atividade] || def[atividade]) };
-  // semana mais curta pode reduzir o limite de atividades "por semana"
   if (lim.periodo === "semana" && data) {
     const sem = semanaDeData(data);
     if (sem && sem.max < lim.max) lim.max = sem.max;
   }
   return lim;
 }
-// Retorna { usado, max, bloq, label } dado o estado atual
-function limInfo(atividade, existente, ct, rSeg) {
-  const data = document.getElementById("sel-data").value;
-  const lim  = getLim(atividade, data);
-  const temHoje = atividade === "cardio"
-    ? (existente ? (existente.cardio_segundos > 0 || (existente.cardio_minutos||0) > 0) : false)
-    : existente?.[atividade === "atividade_coletiva" ? "atividade_coletiva" : atividade];
-  const ctCount = atividade === "cardio" ? ct.cardio
-    : atividade === "atividade_coletiva" ? ct.coletiva
-    : ct[atividade] ?? 0;
+function limInfo(ativ, pid) {
+  const lim  = getLim(ativ, dataAtual);
+  const jaTem = temAtiv(registrosDia[pid], ativ);
+  if (lim.periodo === "dia") return { max: 1, usado: jaTem ? 1 : 0, bloq: false, label: "dia" };
+  const ct = contagemSemana[pid]?.[ativ] || 0;
+  return { max: lim.max, usado: ct + (jaTem ? 1 : 0), bloq: !jaTem && ct >= lim.max, label: "sem" };
+}
 
-  if (lim.periodo === "dia") {
-    return { max: 1, usado: temHoje ? 1 : 0, bloq: false, label: "hoje" };
+function atualizarControles() {
+  const ocupado = carregandoDia || salvando;
+  for (const id of ["btn-part-prev", "btn-part-next", "btn-salvar-proximo", "sel-data", "sel-part"]) {
+    document.getElementById(id).disabled = ocupado;
   }
-  // semana
-  const usadoSemana = ctCount + (temHoje ? 1 : 0);
-  return { max: lim.max, usado: usadoSemana, bloq: !existente && ctCount >= lim.max, label: "sem" };
+  document.getElementById("btn-salvar-proximo").innerHTML =
+    salvando ? `<span class="spinner"></span>Salvando…` : "Salvar e Próximo →";
 }
 
-// ---- REGISTRO POR PARTICIPANTE ----
-let sessoesCardio = {}; // { [pid]: [{h,m,s}] }
-let partIdx = 0;
-
-function sessoesParaSegundos(pid) {
-  return (sessoesCardio[pid] || []).reduce((acc, s) =>
-    acc + (parseInt(s.h)||0)*3600 + (parseInt(s.m)||0)*60 + (parseInt(s.s)||0), 0);
-}
-
-function renderizarTabelaRegistro() {
-  // alias para a nova função
-  renderizarPartAtual();
-}
+function renderizarTabelaRegistro() { renderizarPartAtual(); }
 
 function renderizarPartAtual() {
-  const parts = Object.entries(participantes);
+  const parts = listaParts();
   const aviso = document.getElementById("aviso-sem-parts-reg");
   const wrap  = document.getElementById("reg-part-wrap");
-  if (!parts.length) {
-    aviso.style.display = "block"; wrap.style.display = "none"; return;
-  }
+  atualizarControles();
+  if (!parts.length) { aviso.style.display = "block"; wrap.style.display = "none"; return; }
   aviso.style.display = "none"; wrap.style.display = "block";
 
-  if (partIdx >= parts.length) partIdx = parts.length - 1;
-  if (partIdx < 0) partIdx = 0;
+  let idx = parts.findIndex(([id]) => id === pidAtual);
+  if (idx < 0) idx = 0;
+  const pid = parts[idx][0];
+  pidAtual = pid;
 
-  const [pid, p] = parts[partIdx];
-  document.getElementById("reg-part-nome").textContent = p.nome;
-  document.getElementById("reg-part-progresso").textContent =
-    `${partIdx + 1} de ${parts.length}`;
-
-  const existente = registrosDia[pid];
-  const rSeg = existente
-    ? (existente.cardio_segundos != null ? existente.cardio_segundos : (existente.cardio_minutos||0)*60)
-    : 0;
-  const r  = existente || { musculacao:false, atividade_coletiva:false, post_insta:false };
-  const ct = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
-
-  const liMusc = limInfo("musculacao",        existente, ct, rSeg);
-  const liCard = limInfo("cardio",             existente, ct, rSeg);
-  const liCole = limInfo("atividade_coletiva", existente, ct, rSeg);
-  const liPost = limInfo("post_insta",         existente, ct, rSeg);
-
-  // inicializar sessões cardio a partir do banco (só na primeira vez ou após salvar)
-  if (!sessoesCardio[pid]) {
-    if (existente?.cardio_sessoes?.length) {
-      sessoesCardio[pid] = existente.cardio_sessoes.map(s => ({...s}));
-    } else if (rSeg > 0) {
-      sessoesCardio[pid] = [{
-        h: Math.floor(rSeg/3600),
-        m: Math.floor((rSeg%3600)/60),
-        s: rSeg%60
-      }];
-    } else {
-      sessoesCardio[pid] = [];
-    }
-  }
-
-  function badgeLi(li) {
-    return `<span class="badge-semana ${li.bloq?'cheio':''}">${li.usado}/${li.max} <small>${li.label}</small></span>`;
-  }
-
-  function rowChk(label, name, checked, li) {
-    const ctrl = li.bloq
-      ? `<span style="color:var(--erro);font-size:.82rem">limite atingido</span>`
-      : `<input type="checkbox" class="chk" name="${name}" ${checked?"checked":""}>`;
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.55rem 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:.95rem">${label} ${badgeLi(li)}</span>${ctrl}</div>`;
-  }
-
-  function renderSessoes() {
-    const sessoes = sessoesCardio[pid] || [];
-    const totalSeg = sessoesParaSegundos(pid);
-    const rows = sessoes.map((s, i) => `
-      <div class="sessao-row" data-idx="${i}" style="display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem">
-        <input type="number" class="sc-h" min="0" max="23" value="${Math.min(s.h||0,23)}" style="width:3rem;padding:.25rem .3rem" title="máx 23h">
-        <span>h</span>
-        <input type="number" class="sc-m" min="0" max="59" value="${s.m||0}" style="width:3rem;padding:.25rem .3rem">
-        <span>m</span>
-        <input type="number" class="sc-s" min="0" max="59" value="${s.s||0}" style="width:3rem;padding:.25rem .3rem">
-        <span>s</span>
-        <button type="button" class="btn btn-cinza btn-sm btn-rm-sessao" data-idx="${i}" style="padding:.2rem .5rem;font-size:.8rem">✕</button>
-      </div>`).join("");
-    const total = totalSeg > 0
-      ? `<div style="font-size:.82rem;color:var(--muted);margin-top:.3rem">Total: <strong>${fmtHhMmSs(totalSeg)}</strong></div>`
-      : "";
-    return `
-      <div style="padding:.55rem 0;border-bottom:1px solid var(--border)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem">
-          <span style="font-size:.95rem">⏱ Cardio (h:m:s) ${badgeLi(liCard)}</span>
-          ${liCard.bloq ? `<span style="color:var(--erro);font-size:.82rem">limite atingido</span>` : ""}
-        </div>
-        ${liCard.bloq ? "" : `
-          <div id="sessoes-lista">${rows}</div>
-          ${total}
-          <button type="button" class="btn btn-cinza btn-sm" id="btn-add-sessao" style="margin-top:.4rem;font-size:.82rem">+ Adicionar sessão</button>
-        `}
-      </div>`;
-  }
+  const lancado = id => (!!registrosDia[id] && !registroVazio(registrosDia[id])) || !!conflitosDia[id];
+  const nLanc = parts.filter(([id]) => lancado(id)).length;
+  document.getElementById("sel-part").innerHTML = parts.map(([id, p]) =>
+    `<option value="${id}" ${id === pid ? "selected" : ""}>${lancado(id) ? "✅ " : ""}${esc(p.nome)}</option>`).join("");
+  document.getElementById("reg-part-progresso").textContent = carregandoDia
+    ? "carregando…" : `${idx + 1} de ${parts.length} · ${nLanc} lançado(s) neste dia`;
 
   const campos = document.getElementById("reg-part-campos");
-  campos.innerHTML = `
-    <div style="background:var(--surface);border-radius:10px;padding:.8rem 1rem;margin-bottom:.5rem">
-      ${existente ? `<div style="font-size:.78rem;color:var(--verde,#2ecc40);margin-bottom:.5rem">✅ Já registrado hoje</div>` : ""}
-      ${rowChk("💪 Musculação", "musculacao", r.musculacao, liMusc)}
-      ${renderSessoes()}
-      ${rowChk("🤝 At. Coletiva", "coletiva", r.atividade_coletiva, liCole)}
-      ${rowChk("📸 Post Insta", "post_insta", r.post_insta, liPost)}
+  const ptsEl  = document.getElementById("reg-pts-prev");
+  campos.dataset.pid = "";
+  if (carregandoDia) { campos.innerHTML = caixa("Carregando lançamentos do dia…"); ptsEl.textContent = "–"; return; }
+  if (erroCarga) {
+    campos.innerHTML = caixa(`Não foi possível carregar os lançamentos (verifique a internet).<br>
+      <button class="btn btn-cinza btn-sm" id="btn-recarregar-dia" style="margin-top:.6rem">Tentar de novo</button>`);
+    document.getElementById("btn-recarregar-dia").onclick = carregarRegistrosDoDia;
+    ptsEl.textContent = "–"; return;
+  }
+  if (conflitosDia[pid]) {
+    campos.innerHTML = caixa(`
+      <div style="color:var(--erro);font-weight:700;margin-bottom:.4rem">⚠️ ${conflitosDia[pid].length} lançamentos desta pessoa em ${fmtData(dataAtual)}</div>
+      <div style="color:var(--text);font-size:.88rem;margin-bottom:.7rem">Deve existir só um por dia. Apague os errados no histórico para poder editar.</div>
+      <button class="btn btn-laranja btn-sm" id="btn-ver-conflito">📋 Abrir histórico</button>`);
+    document.getElementById("btn-ver-conflito").onclick = () => abrirHistorico(pid);
+    ptsEl.textContent = "–"; return;
+  }
+
+  const r = registrosDia[pid];
+  if (!sessoesCardio[pid]) sessoesCardio[pid] = sessoesIniciais(r);
+  const li = Object.fromEntries(ATIVS.map(a => [a, limInfo(a, pid)]));
+  const badge = l => `<span class="badge-semana ${l.bloq ? "cheio" : ""}">${l.usado}/${l.max} <small>${l.label}</small></span>`;
+  const linha = (label, a) => `
+    <div class="reg-linha">
+      <span>${label} ${badge(li[a])}</span>
+      ${li[a].bloq ? `<span class="reg-limite">limite atingido</span>`
+                   : `<input type="checkbox" class="chk" name="${a}" ${temAtiv(r, a) ? "checked" : ""}>`}
     </div>`;
 
-  ligarEventosPart(pid);
-  atualizarPtsPreview(pid);
+  campos.innerHTML = `
+    <div style="background:var(--surface);border-radius:10px;padding:.8rem 1rem">
+      ${r && !registroVazio(r) ? `<div style="font-size:.8rem;color:var(--verde);margin-bottom:.4rem">✅ Já lançado em ${fmtData(dataAtual)}</div>` : ""}
+      ${linha("💪 Musculação", "musculacao")}
+      <div class="reg-linha" style="display:block">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+          <span>⏱ Cardio ${badge(li.cardio)}</span>
+          ${li.cardio.bloq ? `<span class="reg-limite">limite atingido</span>` : ""}
+        </div>
+        ${li.cardio.bloq ? "" : `
+          <div id="sessoes-lista"></div>
+          <div id="sessoes-total" style="font-size:.85rem;color:var(--muted)"></div>
+          <button type="button" class="btn btn-cinza btn-sm" id="btn-add-sessao" style="margin-top:.4rem">+ Adicionar sessão</button>`}
+      </div>
+      ${linha("🤝 At. Coletiva", "atividade_coletiva")}
+      ${linha("📸 Post Insta", "post_insta")}
+    </div>`;
+  campos.dataset.pid = pid;
+
+  renderSessoes(pid);
+  campos.querySelector("#btn-add-sessao")?.addEventListener("click", () => {
+    lerSessoesDoDOM(pid);
+    sessoesCardio[pid].push({ h: 0, m: 0, s: 0 });
+    renderSessoes(pid);
+    atualizarPreview(pid);
+  });
+  campos.querySelectorAll(".chk").forEach(inp => inp.addEventListener("change", () => atualizarPreview(pid)));
+  atualizarPreview(pid);
 }
 
-function ligarEventosPart(pid) {
-  const campos = document.getElementById("reg-part-campos");
-
-  campos.querySelector("#btn-add-sessao")?.addEventListener("click", () => {
-    if (!sessoesCardio[pid]) sessoesCardio[pid] = [];
-    sessoesCardio[pid].push({ h:0, m:0, s:0 });
-    renderizarPartAtual();
-  });
-
-  campos.querySelectorAll(".btn-rm-sessao").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const idx = parseInt(btn.dataset.idx);
-      sessoesCardio[pid].splice(idx, 1);
-      renderizarPartAtual();
-    });
-  });
-
-  campos.querySelectorAll(".sc-h,.sc-m,.sc-s").forEach(inp => {
-    inp.addEventListener("change", () => {
-      lerSessoesDoDOM(pid);
-      atualizarPtsPreview(pid);
-    });
-    inp.addEventListener("input", () => atualizarPtsPreview(pid));
-  });
-
-  campos.querySelectorAll(".chk").forEach(inp => {
-    inp.addEventListener("change", () => atualizarPtsPreview(pid));
-  });
+// re-renderiza só as sessões, sem perder o que já foi marcado nos checkboxes
+function renderSessoes(pid) {
+  const box = document.getElementById("sessoes-lista");
+  if (!box) return;
+  box.innerHTML = sessoesCardio[pid].map((s, i) => `
+    <div class="sessao-row">
+      <input type="number" inputmode="numeric" class="sc-h" min="0" max="12" value="${s.h || 0}" aria-label="horas"><span>h</span>
+      <input type="number" inputmode="numeric" class="sc-m" min="0" max="59" value="${s.m || 0}" aria-label="minutos"><span>min</span>
+      <input type="number" inputmode="numeric" class="sc-s" min="0" max="59" value="${s.s || 0}" aria-label="segundos"><span>s</span>
+      <button type="button" class="btn btn-cinza btn-sm btn-rm-sessao" data-idx="${i}" style="padding:.25rem .55rem">✕</button>
+    </div>`).join("");
+  box.querySelectorAll(".btn-rm-sessao").forEach(btn => btn.addEventListener("click", () => {
+    lerSessoesDoDOM(pid);
+    sessoesCardio[pid].splice(+btn.dataset.idx, 1);
+    renderSessoes(pid);
+    atualizarPreview(pid);
+  }));
+  box.querySelectorAll("input").forEach(inp => inp.addEventListener("input", () => atualizarPreview(pid)));
 }
 
 function lerSessoesDoDOM(pid) {
   const campos = document.getElementById("reg-part-campos");
-  sessoesCardio[pid] = [];
-  campos.querySelectorAll(".sessao-row").forEach(row => {
-    const h = Math.min(parseInt(row.querySelector(".sc-h")?.value)||0, 23);
-    const m = Math.min(parseInt(row.querySelector(".sc-m")?.value)||0, 59);
-    const s = Math.min(parseInt(row.querySelector(".sc-s")?.value)||0, 59);
-    sessoesCardio[pid].push({ h, m, s });
-  });
+  if (campos.dataset.pid !== pid || !document.getElementById("sessoes-lista")) return;
+  const n = el => Math.max(0, parseInt(el?.value) || 0);
+  sessoesCardio[pid] = [...campos.querySelectorAll(".sessao-row")].map(row => ({
+    h: n(row.querySelector(".sc-h")), m: n(row.querySelector(".sc-m")), s: n(row.querySelector(".sc-s")),
+  }));
 }
 
 function getValoresPart(pid) {
   lerSessoesDoDOM(pid);
   const campos = document.getElementById("reg-part-campos");
-  const totalSeg = sessoesParaSegundos(pid);
+  const r = registrosDia[pid];
+  const chk = a => { const el = campos.querySelector(`.chk[name="${a}"]`); return el ? el.checked : temAtiv(r, a); };
+  const sessoes = (sessoesCardio[pid] || []).filter(s => segSessao(s) > 0);
+  const seg = totalSessoes(sessoes);
   return {
-    musculacao:         campos.querySelector('[name="musculacao"]')?.checked || false,
-    cardio_segundos:    totalSeg,
-    cardio_minutos:     Math.floor(totalSeg/60),
-    cardio_sessoes:     sessoesCardio[pid] || [],
-    atividade_coletiva: campos.querySelector('[name="coletiva"]')?.checked || false,
-    post_insta:         campos.querySelector('[name="post_insta"]')?.checked || false,
+    musculacao:         chk("musculacao"),
+    cardio_segundos:    seg,
+    cardio_minutos:     Math.floor(seg / 60),
+    cardio_sessoes:     sessoes,
+    atividade_coletiva: chk("atividade_coletiva"),
+    post_insta:         chk("post_insta"),
   };
 }
 
-function atualizarPtsPreview(pid) {
-  lerSessoesDoDOM(pid);
-  const vals = getValoresPart(pid);
-  const el = document.getElementById("reg-pts-prev");
-  if (el) el.textContent = calcPontos(vals);
+function atualizarPreview(pid) {
+  const v = getValoresPart(pid);
+  document.getElementById("reg-pts-prev").textContent = calcPontos(v);
+  const t = document.getElementById("sessoes-total");
+  if (t) t.innerHTML = v.cardio_sessoes.length > 1 ? `Total: <strong>${fmtHhMmSs(v.cardio_segundos)}</strong>` : "";
 }
 
-function registrarLog(nome, vals, valsAntigos) {
-  const nomes = { musculacao:"Musculação", atividade_coletiva:"Coletiva", post_insta:"Post Insta" };
+function registrarLog(nome, data, vals, antes) {
   const itens = [];
-  for (const [k, label] of Object.entries(nomes)) {
-    if (vals[k] !== undefined && valsAntigos[k] !== undefined && vals[k] !== valsAntigos[k]) {
-      itens.push(vals[k] ? `✅ ${label}` : `❌ ${label} removido`);
-    }
+  const rot = { musculacao: "Musculação", atividade_coletiva: "Coletiva", post_insta: "Post Insta" };
+  for (const [k, label] of Object.entries(rot)) {
+    if (!!vals[k] !== !!antes?.[k]) itens.push(vals[k] ? `✅ ${label}` : `❌ ${label} removido`);
   }
-  const segNovo = vals.cardio_segundos ?? 0, segVelho = valsAntigos.cardio_segundos ?? 0;
-  if (segNovo !== segVelho) {
-    if (segNovo > 0) {
-      const h=Math.floor(segNovo/3600), m=Math.floor((segNovo%3600)/60), s=segNovo%60;
-      itens.push(`⏱ Cardio: ${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`);
-    } else {
-      itens.push(`❌ Cardio removido`);
-    }
-  }
+  const segN = vals.cardio_segundos || 0, segV = segDe(antes);
+  if (segN !== segV) itens.push(segN > 0 ? `⏱ Cardio ${fmtHhMmSs(segN)}` : "❌ Cardio removido");
   if (!itens.length) return;
-  const agora = new Date().toLocaleTimeString("pt-BR", { timeZone:"America/Sao_Paulo", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+  const hora  = new Date().toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
   const lista = document.getElementById("log-lista");
-  const log   = document.getElementById("log-alteracoes");
-  if (!lista) return;
-  log.style.display = "block";
-  for (const item of itens) {
-    const li = document.createElement("li");
-    li.style.cssText = "font-size:.82rem;padding:.3rem .6rem;background:var(--cinza-bg,#f5f5f5);border-radius:6px;display:flex;justify-content:space-between;gap:.5rem";
-    li.innerHTML = `<span><strong>${nome}</strong> · ${item}</span><span style="color:var(--muted);white-space:nowrap">${agora}</span>`;
-    lista.prepend(li);
-  }
-  // mantém só os últimos 10
+  document.getElementById("log-alteracoes").style.display = "block";
+  const li = document.createElement("li");
+  li.className = "log-item";
+  li.innerHTML = `<span><strong>${esc(nome)}</strong> · ${fmtData(data).slice(0, 5)} · ${itens.join(" · ")}</span><span style="color:var(--muted);white-space:nowrap">${hora}</span>`;
+  lista.prepend(li);
   while (lista.children.length > 10) lista.removeChild(lista.lastChild);
 }
 
-async function salvarParticipanteAuto(pid, getVals) {
-  if (!desafioAtivo) return;
-  const data = document.getElementById("sel-data").value;
-  const ct   = contagemSemana[pid] || { musculacao:0, cardio:0, post_insta:0, coletiva:0 };
-  const existente = registrosDia[pid];
-  const valsAntigos = existente ? { ...existente } : { musculacao:false, atividade_coletiva:false, post_insta:false, cardio_segundos:0 };
-  const vals = getVals();
+// Salva o participante exibido. Retorna true se pode seguir navegando.
+async function salvarParticipante(pid) {
+  if (!desafioAtivo || carregandoDia || salvando) return false;
+  if (erroCarga) return true;
+  const campos = document.getElementById("reg-part-campos");
+  if (!pid || campos.dataset.pid !== pid) return true;   // nada editável na tela (ex.: conflito)
 
-  // validação: sessão de cardio com horas absurdas (> 23h)
-  if (sessoesCardio[pid]) {
-    for (const s of sessoesCardio[pid]) {
-      if ((parseInt(s.h)||0) > 23) {
-        flash(`⚠️ Cardio inválido: ${s.h}h não é possível. Corrija antes de salvar.`, false);
-        renderizarPartAtual();
-        return;
-      }
+  const data  = dataAtual;
+  const antes = registrosDia[pid] || null;
+  const vals  = getValoresPart(pid);
+  const chaveSessoes = x => JSON.stringify((x?.cardio_sessoes || []).map(s => [s.h || 0, s.m || 0, s.s || 0]));
+  const mudou = !antes
+    ? !registroVazio(vals)
+    : ["musculacao", "atividade_coletiva", "post_insta"].some(a => !!vals[a] !== !!antes[a])
+      || vals.cardio_segundos !== segDe(antes) || chaveSessoes(vals) !== chaveSessoes(antes);
+  if (!mudou) return true;
+
+  for (const s of vals.cardio_sessoes) {
+    if (s.m > 59 || s.s > 59) { flash("Cardio: minutos e segundos vão no máximo até 59.", false); return false; }
+    if (s.h > 12) { flash(`Cardio de ${s.h}h numa sessão não é possível — confira o valor.`, false); return false; }
+  }
+  const longa = vals.cardio_sessoes.find(s => s.h >= 4);
+  if (longa && !confirm(`Confirma uma sessão de cardio de ${longa.h}h ${longa.m}min?`)) return false;
+
+  salvando = true; atualizarControles();
+  try {
+    const novoId = idRegistro(pid, data);
+    const batch  = writeBatch(db);
+    let novo = null;
+    if (registroVazio(vals)) {
+      batch.delete(doc(db, "registros", antes.id));   // desmarcou tudo: o dia deixa de contar
+    } else {
+      novo = { participanteId: pid, data, desafioId: desafioAtivoId, ...vals,
+               pontos: calcPontos(vals), atualizadoEm: new Date().toISOString() };
+      batch.set(doc(db, "registros", novoId), novo);
+      if (antes && antes.id !== novoId) batch.delete(doc(db, "registros", antes.id));
     }
+    await batch.commit();
+    if (dataAtual === data) {
+      if (novo) registrosDia[pid] = { id: novoId, ...novo }; else delete registrosDia[pid];
+      sessoesCardio[pid] = null;
+    }
+    registrarLog(participantes[pid]?.nome || "?", data, vals, antes);
+    return true;
+  } catch (e) {
+    flash("Não foi possível salvar (verifique a internet) e tente de novo.", false);
+    return false;
+  } finally {
+    salvando = false;
+    atualizarControles();
+  }
+}
+
+function pidRelativo(delta) {
+  const parts = listaParts();
+  const i = parts.findIndex(([id]) => id === pidAtual);
+  return parts[Math.min(Math.max(i + delta, 0), parts.length - 1)]?.[0];
+}
+
+async function navegarPara(novoPid) {
+  if (carregandoDia || salvando) return false;
+  const ok = await salvarParticipante(pidAtual);
+  if (ok && novoPid) pidAtual = novoPid;
+  renderizarPartAtual();
+  return ok;
+}
+
+// salva o participante na data antiga ANTES de trocar
+async function trocarData(novaData) {
+  const sel = document.getElementById("sel-data");
+  sel.value = dataAtual;
+  if (carregandoDia || salvando) return false;
+  if (!await salvarParticipante(pidAtual)) return false;
+  sel.value = novaData;
+  await carregarRegistrosDoDia();
+  return true;
+}
+
+// ===== HISTÓRICO =====
+let histRegs = [];
+let histFiltroInicial = null;
+
+function ativarAba(nome) {
+  document.querySelectorAll(".tab,.painel").forEach(el => el.classList.remove("ativo"));
+  document.querySelector(`.tab[data-tab="${nome}"]`)?.classList.add("ativo");
+  document.getElementById("painel-" + nome)?.classList.add("ativo");
+  if (nome === "historico") carregarHistorico();
+}
+
+function abrirHistorico(pid) {
+  histFiltroInicial = pid || null;
+  ativarAba("historico");
+}
+
+async function carregarHistorico() {
+  const lista = document.getElementById("hist-lista");
+  document.getElementById("hist-resumo").innerHTML = "";
+  if (!desafioAtivo) { lista.innerHTML = caixa("Nenhum desafio ativo."); return; }
+  lista.innerHTML = caixa("Carregando…");
+  try {
+    const snap = await getDocs(query(collection(db, "registros"), where("desafioId", "==", desafioAtivoId)));
+    histRegs = [];
+    snap.forEach(d => histRegs.push({ id: d.id, ...d.data() }));
+  } catch (e) {
+    lista.innerHTML = caixa("Não foi possível carregar o histórico (verifique a internet).");
+    return;
+  }
+  renderizarHistorico();
+}
+
+function nomeDe(pid) { return participantes[pid]?.nome || "(participante removido)"; }
+
+function problemasRegistro(r, qtdNoDia) {
+  const p = [];
+  if (qtdNoDia > 1) p.push("duplicado");
+  if (registroVazio(r)) p.push("vazio");
+  if ((r.cardio_sessoes || []).some(s => (s.h || 0) >= 4) || segDe(r) >= 6 * 3600) p.push("cardio alto");
+  if (r.data > hojeBR()) p.push("data futura");
+  else if (r.data < desafioAtivo.inicio || r.data > desafioAtivo.fim) p.push("fora do período");
+  if (!participantes[r.participanteId]) p.push("participante removido");
+  return p;
+}
+
+function resumoAtivs(r) {
+  const p = [];
+  if (r.musculacao) p.push("💪 Musculação");
+  const seg = segDe(r);
+  if (seg > 0) {
+    const ses = r.cardio_sessoes || [];
+    p.push(`⏱ ${fmtHhMmSs(seg)}${ses.length > 1 ? ` (${ses.map(s => fmtHhMmSs(segSessao(s))).join(" + ")})` : ""}`);
+  }
+  if (r.atividade_coletiva) p.push("🤝 Coletiva");
+  if (r.post_insta) p.push("📸 Post");
+  return p.length ? p.join(" · ") : "nada marcado";
+}
+
+function renderizarHistorico() {
+  const sel   = document.getElementById("hist-filtro");
+  const lista = document.getElementById("hist-lista");
+  const chave = r => r.participanteId + "|" + r.data;
+  const porDia = {};
+  for (const r of histRegs) porDia[chave(r)] = (porDia[chave(r)] || 0) + 1;
+  const itens  = histRegs.map(r => ({ r, prob: problemasRegistro(r, porDia[chave(r)]) }));
+  const nProb  = itens.filter(x => x.prob.length).length;
+  const vazios = histRegs.filter(registroVazio);
+
+  const atual = histFiltroInicial || sel.value || (nProb ? "problemas" : "todos");
+  histFiltroInicial = null;
+  sel.innerHTML = `<option value="problemas">⚠️ Só com problema (${nProb})</option>
+    <option value="todos">Todos os participantes</option>` +
+    listaParts().map(([id, p]) => `<option value="${id}">${esc(p.nome)}</option>`).join("");
+  sel.value = [...sel.options].some(o => o.value === atual) ? atual : "todos";
+  const f = sel.value;
+
+  document.getElementById("hist-resumo").innerHTML = vazios.length
+    ? `<button class="btn btn-sm btn-perigo" id="btn-apagar-vazios">🗑 Apagar ${vazios.length} lançamento(s) vazio(s)</button>` : "";
+  document.getElementById("btn-apagar-vazios")?.addEventListener("click", apagarVazios);
+
+  const visiveis = itens.filter(x => f === "todos" ? true : f === "problemas" ? x.prob.length : x.r.participanteId === f);
+  const grupos = {};
+  for (const x of visiveis) (grupos[x.r.participanteId] ??= []).push(x);
+  const ordem = Object.keys(grupos).sort((a, b) => nomeDe(a).localeCompare(nomeDe(b), "pt-BR"));
+  if (!ordem.length) {
+    lista.innerHTML = caixa(f === "problemas" ? "Nenhum problema encontrado 🎉" : "Nenhum lançamento.");
+    return;
   }
 
-  // não criar registro vazio (sem nenhuma atividade)
-  const temAtividade = vals.musculacao || vals.cardio_segundos > 0 || vals.post_insta || vals.atividade_coletiva;
-  if (!existente && !temAtividade) {
-    return; // nada a salvar
+  lista.innerHTML = ordem.map(pid => {
+    const linhas = grupos[pid].sort((a, b) => a.r.data.localeCompare(b.r.data));
+    const pts = linhas.reduce((s, x) => s + (x.r.pontos || 0), 0);
+    return `<div class="card hist-grupo">
+      <div class="hist-cab"><strong>${esc(nomeDe(pid))}</strong><span>${linhas.length} lançamento(s) · ${pts} pts</span></div>
+      ${linhas.map(({ r, prob }) => `
+        <div class="hist-linha${prob.length ? " com-prob" : ""}">
+          <div style="flex:1;min-width:0">
+            <div><strong>${diaSem(r.data)} ${fmtData(r.data)}</strong> · ${r.pontos || 0} pts</div>
+            <div class="hist-ativs">${esc(resumoAtivs(r))}</div>
+            ${prob.length ? `<div>${prob.map(p => `<span class="tag-prob">${p}</span>`).join("")}</div>` : ""}
+          </div>
+          <div class="hist-acoes">
+            ${porDia[chave(r)] === 1 ? `<button class="btn btn-cinza btn-sm" data-editar="${r.id}">Editar</button>` : ""}
+            <button class="btn btn-sm btn-perigo" data-apagar="${r.id}">Apagar</button>
+          </div>
+        </div>`).join("")}
+    </div>`;
+  }).join("");
+  lista.querySelectorAll("[data-editar]").forEach(b => b.addEventListener("click", () => editarDoHistorico(b.dataset.editar)));
+  lista.querySelectorAll("[data-apagar]").forEach(b => b.addEventListener("click", () => apagarRegistro(b.dataset.apagar)));
+}
+
+async function editarDoHistorico(id) {
+  const r = histRegs.find(x => x.id === id);
+  if (!r) return;
+  const sel = document.getElementById("sel-data");
+  if (![...sel.options].some(o => o.value === r.data)) {
+    flash("Essa data não está disponível para lançamento. Se o lançamento estiver errado, apague-o.", false);
+    return;
   }
-
-  if (!existente) {
-    const lMusc = getLim("musculacao", data), lCard = getLim("cardio", data);
-    const lPost = getLim("post_insta", data), lCole = getLim("atividade_coletiva", data);
-    if (lMusc.periodo === "semana" && ct.musculacao >= lMusc.max) vals.musculacao = false;
-    if (lCard.periodo === "semana" && ct.cardio     >= lCard.max) { vals.cardio_segundos = 0; vals.cardio_minutos = 0; }
-    if (lPost.periodo === "semana" && ct.post_insta >= lPost.max) vals.post_insta = false;
-    if (lCole.periodo === "semana" && ct.coletiva   >= lCole.max) vals.atividade_coletiva = false;
-  }
-
-  const pontos = calcPontos(vals);
-  const dados  = { participanteId: pid, data, desafioId: desafioAtivoId, ...vals, pontos };
-
-  if (existente) {
-    await setDoc(doc(db,"registros",existente.id), dados);
-    registrosDia[pid] = { ...registrosDia[pid], ...dados };
-  } else {
-    const ref = await addDoc(collection(db,"registros"), dados);
-    registrosDia[pid] = { id: ref.id, ...dados };
-    // atualiza contagem semanal local sem recarregar do banco
-    if (!contagemSemana[pid]) contagemSemana[pid] = {musculacao:0,cardio:0,post_insta:0,coletiva:0};
-    if (vals.musculacao)         contagemSemana[pid].musculacao++;
-    if (vals.cardio_segundos > 0) contagemSemana[pid].cardio++;
-    if (vals.post_insta)         contagemSemana[pid].post_insta++;
-    if (vals.atividade_coletiva) contagemSemana[pid].coletiva++;
-  }
-
-  const nomePart = participantes[pid]?.nome || pid;
-  registrarLog(nomePart, vals, valsAntigos);
-  // sem recarregar do banco — só atualiza a UI local
+  ativarAba("registrar");
+  const ok = r.data === dataAtual ? await salvarParticipante(pidAtual) : await trocarData(r.data);
+  if (!ok) return;
+  pidAtual = r.participanteId;
   renderizarPartAtual();
 }
 
+async function apagarRegistro(id) {
+  const r = histRegs.find(x => x.id === id);
+  if (!r) return;
+  if (!confirm(`Apagar o lançamento de ${nomeDe(r.participanteId)} em ${fmtData(r.data)}?\n\n${resumoAtivs(r)} · ${r.pontos || 0} pts`)) return;
+  try {
+    await deleteDoc(doc(db, "registros", id));
+  } catch (e) {
+    flash("Não foi possível apagar (verifique a internet).", false);
+    return;
+  }
+  histRegs = histRegs.filter(x => x.id !== id);
+  renderizarHistorico();
+  flash("Lançamento apagado.");
+  if (r.data === dataAtual) carregarRegistrosDoDia();
+}
+
+async function apagarVazios() {
+  const alvo = histRegs.filter(registroVazio);
+  if (!alvo.length || !confirm(`Apagar ${alvo.length} lançamento(s) sem nenhuma atividade marcada?`)) return;
+  try {
+    const batch = writeBatch(db);
+    alvo.forEach(r => batch.delete(doc(db, "registros", r.id)));
+    await batch.commit();
+  } catch (e) {
+    flash("Não foi possível apagar (verifique a internet).", false);
+    return;
+  }
+  histRegs = histRegs.filter(r => !registroVazio(r));
+  renderizarHistorico();
+  flash(`${alvo.length} lançamento(s) vazio(s) apagado(s).`);
+  if (alvo.some(r => r.data === dataAtual)) carregarRegistrosDoDia();
+}
 
 // ---- PARTICIPANTES CRUD ----
 async function adicionarParticipante(e) {
@@ -1255,7 +1459,6 @@ window.ativarDesafio           = ativarDesafio;
 window.limparRegistrosDesafio  = limparRegistrosDesafio;
 window.abrirFormDesafioById = abrirFormDesafioById;
 window.removerParticipante  = removerParticipante;
-window.removerFaixa         = (i) => { faixasTemp.splice(i,1); renderizarFaixas(); };
 </script>
 </body>
 </html>

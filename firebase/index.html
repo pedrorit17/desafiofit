@@ -221,6 +221,9 @@
   function hojeBR() {
     return new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
   }
+  function esc(s) {
+    return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+  }
 
   function ptsCardio(min) {
     const faixas = desafioAtivo?.pontuacao?.cardio_faixas || [];
@@ -258,12 +261,20 @@
     for (const pid of Object.keys(participantes)) {
       agg[pid] = { nome: participantes[pid].nome, pts:0, cardio_seg:0, dias:0, coletivas:0, posts:0 };
     }
+    // um lançamento por pessoa por dia; ignora lançamentos vazios
+    const porDia = {};
     for (const r of registros) {
+      const seg = r.cardio_segundos != null ? r.cardio_segundos : (r.cardio_minutos||0)*60;
+      if (!r.musculacao && !seg && !r.atividade_coletiva && !r.post_insta) continue;
+      const k = r.participanteId + "|" + r.data;
+      if (!porDia[k] || (r.pontos||0) > (porDia[k].pontos||0)) porDia[k] = { ...r, seg };
+    }
+    const validos = Object.values(porDia);
+    for (const r of validos) {
       if (!agg[r.participanteId]) continue;
       const a = agg[r.participanteId];
-      const seg = r.cardio_segundos != null ? r.cardio_segundos : (r.cardio_minutos||0)*60;
       a.pts        += r.pontos || 0;
-      a.cardio_seg += seg;
+      a.cardio_seg += r.seg;
       a.dias++;
       if (r.atividade_coletiva) a.coletivas++;
       if (r.post_insta)         a.posts++;
@@ -283,7 +294,7 @@
     const totalSeg = lista.reduce((s,p)=>s+p.cardio_seg, 0);
     document.getElementById("stat-participantes").textContent = lista.length;
     document.getElementById("stat-cardio").textContent        = fmtHhMmSs(totalSeg);
-    document.getElementById("stat-registros").textContent     = registros.length;
+    document.getElementById("stat-registros").textContent     = validos.length;
 
     // tabela desktop
     const tbody = document.getElementById("tbody-ranking");
@@ -297,7 +308,7 @@
         tbody.innerHTML += `
           <tr class="${cls}">
             <td class="pos">${med}</td>
-            <td class="nome-col">${p.nome}</td>
+            <td class="nome-col">${esc(p.nome)}</td>
             <td class="pts-col centro">${p.pts}</td>
             <td class="centro"><span class="cardio-destaque">${fmtHhMmSs(p.cardio_seg)}</span></td>
             <td class="centro">${p.dias}/${totalDias}</td>
@@ -318,7 +329,7 @@
       card.innerHTML = `
         <div class="medal">${med}</div>
         <div class="info">
-          <div class="nome">${p.nome}</div>
+          <div class="nome">${esc(p.nome)}</div>
           <div class="meta">
             <span>⏱ ${fmtHhMmSs(p.cardio_seg)}</span>
             <span>📅 ${p.dias} dias</span>
@@ -369,17 +380,18 @@
         return;
       }
     }
-    document.getElementById("loading").style.display  = "block";
-    document.getElementById("conteudo").style.display = "none";
+    // só mostra "carregando" na primeira vez; nas atualizações automáticas mantém o placar na tela
+    if (!desafioAtivo) document.getElementById("loading").style.display = "block";
     try {
-      const [snapD, snapP, snapR] = await Promise.all([
-        getDocs(collection(db,"desafios")),
-        getDocs(collection(db,"participantes")),
-        getDocs(collection(db,"registros")),
-      ]);
+      const snapD = await getDocs(collection(db,"desafios"));
       const desafios = []; snapD.forEach(d => desafios.push({id:d.id,...d.data()}));
-      const parts    = []; snapP.forEach(d => parts.push({id:d.id,...d.data()}));
-      const regs     = []; snapR.forEach(d => regs.push({id:d.id,...d.data()}));
+      const ativoId = desafios.find(d => d.ativo)?.id;
+      const [snapP, snapR] = ativoId ? await Promise.all([
+        getDocs(collection(db,"participantes")),
+        getDocs(query(collection(db,"registros"), where("desafioId","==",ativoId))),  // só o desafio ativo
+      ]) : [null, null];
+      const parts    = []; snapP?.forEach(d => parts.push({id:d.id,...d.data()}));
+      const regs     = []; snapR?.forEach(d => regs.push({id:d.id,...d.data()}));
       const dados = { desafios, parts, regs };
       salvarCache(dados);
       aplicarDados(dados);
