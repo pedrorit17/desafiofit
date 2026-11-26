@@ -198,6 +198,9 @@
       border-radius:10px; padding:.1rem .5rem; margin:.25rem .25rem 0 0; }
     .btn-perigo { background:var(--erro-bg); color:var(--erro); }
     .reg-botoes { display:flex; gap:.5rem; flex-wrap:wrap; }
+    .rel-linha { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+    .rel-linha select { flex:1; min-width:130px; padding:.5rem .7rem; border:1.5px solid var(--border);
+      border-radius:8px; font-size:.95rem; background:white; }
     .aviso-versao { display:flex; align-items:center; justify-content:center; gap:.8rem; flex-wrap:wrap;
       background:#fff4ec; border-bottom:2px solid var(--laranja); padding:.6rem 1rem; font-weight:600; font-size:.9rem; }
     .btn-nada { background:var(--surface); color:var(--erro); border:1.5px solid #f1b0b0; }
@@ -344,6 +347,17 @@
 
     <!-- ===== PAINEL: HISTÓRICO ===== -->
     <div class="painel" id="painel-historico">
+      <div class="card" style="padding:1rem 1.1rem;margin-bottom:1.2rem">
+        <h3 style="margin-bottom:.7rem">📄 Relatório PDF</h3>
+        <div class="rel-linha">
+          <select id="rel-tipo" aria-label="Tipo de relatório">
+            <option value="dia">Por dia</option>
+            <option value="part">Por participante</option>
+          </select>
+          <select id="rel-alvo" aria-label="Dia ou participante"></select>
+          <button class="btn btn-laranja btn-sm" id="btn-gerar-pdf">Gerar PDF</button>
+        </div>
+      </div>
       <div class="config-dia">
         <div class="campo" style="flex:1;min-width:200px">
           <label for="hist-filtro">Mostrar</label>
@@ -586,7 +600,7 @@ document.querySelectorAll(".tab").forEach(tab => {
 
 // ---- VERSÃO ----
 // aba aberta há tempo continua rodando o código antigo; avisa quando há versão nova publicada
-const VERSAO = "2026-11-26.2";
+const VERSAO = "2026-11-26.3";
 async function verificarVersao() {
   try {
     const txt = await (await fetch("admin.html", { cache: "no-store" })).text();
@@ -615,6 +629,8 @@ function iniciarApp() {
   document.getElementById("btn-hist-part").addEventListener("click", () => abrirHistorico(pidAtual));
   document.getElementById("hist-filtro").addEventListener("change", renderizarHistorico);
   document.getElementById("btn-hist-recarregar").addEventListener("click", carregarHistorico);
+  document.getElementById("rel-tipo").addEventListener("change", preencherAlvoRelatorio);
+  document.getElementById("btn-gerar-pdf").addEventListener("click", gerarRelatorio);
 
   document.getElementById("btn-atualizar-versao").addEventListener("click", async () => {
     await salvarParticipante(pidAtual);
@@ -1398,7 +1414,8 @@ function abrirHistorico(pid) {
 async function carregarHistorico() {
   const lista = document.getElementById("hist-lista");
   document.getElementById("hist-resumo").innerHTML = "";
-  if (!desafioAtivo) { lista.innerHTML = caixa("Nenhum desafio ativo."); return; }
+  if (!desafioAtivo) { lista.innerHTML = caixa("Nenhum desafio ativo."); return false; }
+  preencherAlvoRelatorio();
   lista.innerHTML = caixa("Carregando…");
   try {
     const snap = await getDocs(query(collection(db, "registros"), where("desafioId", "==", desafioAtivoId)));
@@ -1406,9 +1423,10 @@ async function carregarHistorico() {
     snap.forEach(d => histRegs.push({ id: d.id, ...d.data() }));
   } catch (e) {
     lista.innerHTML = caixa("Não foi possível carregar o histórico (verifique a internet).");
-    return;
+    return false;
   }
   renderizarHistorico();
+  return true;
 }
 
 function nomeDe(pid) { return participantes[pid]?.nome || "(participante removido)"; }
@@ -1538,6 +1556,187 @@ async function apagarVazios() {
   renderizarHistorico();
   flash(`${alvo.length} lançamento(s) vazio(s) apagado(s).`);
   if (alvo.some(r => r.data === dataAtual)) carregarRegistrosDoDia();
+}
+
+// ===== RELATÓRIO PDF =====
+function datasRelatorio() {
+  if (!desafioAtivo) return [];
+  const hoje = hojeBR();
+  const datas = hoje < desafioAtivo.inicio ? [hoje] : datasDesafio().filter(d => d <= hoje);
+  return datas.reverse();   // mais recente primeiro
+}
+
+function preencherAlvoRelatorio() {
+  const tipo = document.getElementById("rel-tipo").value;
+  const sel  = document.getElementById("rel-alvo");
+  const anterior = sel.value;
+  sel.innerHTML = tipo === "dia"
+    ? datasRelatorio().map(d => `<option value="${d}">${diaSem(d)} · ${fmtData(d)}</option>`).join("")
+    : listaParts().map(([id, p]) => `<option value="${id}">${esc(p.nome)}</option>`).join("");
+  if ([...sel.options].some(o => o.value === anterior)) sel.value = anterior;
+}
+
+function carregarScript(src) {
+  return new Promise((ok, erro) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = ok; s.onerror = () => erro(new Error("falha ao carregar " + src));
+    document.head.appendChild(s);
+  });
+}
+async function carregarJsPDF() {
+  if (!window.jspdf) await carregarScript("lib/jspdf.umd.min.js");
+  if (!window.jspdf.jsPDF.API.autoTable) await carregarScript("lib/jspdf.plugin.autotable.min.js");
+  return window.jspdf.jsPDF;
+}
+
+const VERMELHO = [201, 42, 42], CINZA = [140, 140, 140], LARANJA = [224, 123, 57];
+
+// células de um lançamento: [musculação, cardio, coletiva, post, total]
+function celulasRelatorio(r) {
+  const avisoLinha = (txt, cor) => [{ content: txt, colSpan: 4, styles: { halign: "center", textColor: cor, fontStyle: "bold" } }];
+  if (!r) return { tipo: "pendente", cel: [...avisoLinha("Sem lançamento", CINZA), { content: "–", styles: { textColor: CINZA } }] };
+  if (ehNada(r)) return { tipo: "nada", cel: [...avisoLinha("Não fez nada", VERMELHO), "0"] };
+  if (registroVazio(r)) return { tipo: "vazio", cel: [...avisoLinha("Lançamento vazio (apagar no histórico)", VERMELHO), "0"] };
+  const p  = desafioAtivo.pontuacao || {};
+  const pm = p.musculacao ?? 20, pc = p.coletiva ?? 5, pp = p.post_insta ?? 2;
+  const seg  = segDe(r);
+  const ses  = (r.cardio_sessoes || []).filter(s => segSessao(s) > 0);
+  const ptsC = seg > 0 ? ptsCardio(Math.floor(seg / 60)) : 0;
+  const sim  = pts => `Sim\n${pts} pts`;
+  let cardio = "—";
+  if (seg > 0) {
+    const tempo = ses.length > 1
+      ? `${ses.length} sessões: ${ses.map(s => fmtHhMmSs(segSessao(s))).join(" + ")}\n= ${fmtHhMmSs(seg)}`
+      : fmtHhMmSs(seg);
+    cardio = `${tempo}\n${ptsC} pts`;
+  }
+  const soma = (r.musculacao ? pm : 0) + ptsC + (r.atividade_coletiva ? pc : 0) + (r.post_insta ? pp : 0);
+  const difere = soma !== (r.pontos || 0);
+  return {
+    tipo: "ok", difere,
+    cel: [r.musculacao ? sim(pm) : "—", cardio, r.atividade_coletiva ? sim(pc) : "—", r.post_insta ? sim(pp) : "—",
+          { content: `${r.pontos || 0}${difere ? " *" : ""}`, styles: { fontStyle: "bold" } }],
+  };
+}
+
+async function gerarRelatorio() {
+  const btn  = document.getElementById("btn-gerar-pdf");
+  const tipo = document.getElementById("rel-tipo").value;
+  const alvo = document.getElementById("rel-alvo").value;
+  if (!desafioAtivo || !alvo) return;
+  btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>Gerando…`;
+  try {
+    const [jsPDF, ok] = await Promise.all([carregarJsPDF(), carregarHistorico()]);
+    if (!ok) throw new Error("histórico não carregou");
+    const docPdf = new jsPDF({ unit: "mm", format: "a4" });
+    const geradoEm = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
+    let titulo, subtitulo, primeiraCol, linhas = [], resumo = [], arquivo, temDifere = false;
+
+    if (tipo === "dia") {
+      const sem = semanaDeData(alvo);
+      titulo    = `Relatório do dia · ${diaSem(alvo)} ${fmtData(alvo)}`;
+      subtitulo = `${desafioAtivo.nome}${sem ? ` · Semana ${sem.num}` : ""} · gerado em ${geradoEm}`;
+      primeiraCol = "Participante";
+      arquivo = `relatorio-${alvo}.pdf`;
+      const doDia = {};
+      for (const r of histRegs.filter(r => r.data === alvo)) (doDia[r.participanteId] ??= []).push(r);
+      const pids = [...listaParts().map(([id]) => id), ...Object.keys(doDia).filter(id => !participantes[id])];
+      const cont = { ok: 0, nada: 0, pendente: 0, vazio: 0 };
+      let pts = 0, dup = 0;
+      for (const pid of pids) {
+        const regsP = doDia[pid] || [null];
+        regsP.forEach((r, i) => {
+          const c = celulasRelatorio(r);
+          temDifere ||= !!c.difere;
+          const nome = regsP.length > 1
+            ? { content: `${nomeDe(pid)}\n(duplicado ${i + 1}/${regsP.length})`, styles: { textColor: VERMELHO } }
+            : nomeDe(pid);
+          linhas.push([nome, ...c.cel]);
+          if (i === 0) cont[c.tipo]++;
+        });
+        // igual ao placar: conta um lançamento por pessoa (o de maior pontuação)
+        const validos = regsP.filter(r => r && !registroVazio(r));
+        if (validos.length) pts += Math.max(...validos.map(r => r.pontos || 0));
+        if (regsP.length > 1) dup++;
+      }
+      resumo.push(`Fizeram atividade: ${cont.ok}   ·   Não fizeram nada: ${cont.nada}   ·   Sem lançamento: ${cont.pendente}`);
+      resumo.push(`Pontos somados no dia: ${pts}${dup ? " (duplicados contados uma vez, como no placar)" : ""}`);
+      if (dup) resumo.push(`Atenção: ${dup} participante(s) com lançamento duplicado neste dia — corrija no histórico.`);
+      if (cont.vazio) resumo.push(`Atenção: ${cont.vazio} lançamento(s) vazio(s) — apague no histórico.`);
+    } else {
+      const nome = nomeDe(alvo);
+      titulo    = `Relatório · ${nome}`;
+      subtitulo = `${desafioAtivo.nome} · ${fmtData(desafioAtivo.inicio)} a ${fmtData(desafioAtivo.fim)} · gerado em ${geradoEm}`;
+      primeiraCol = "Dia";
+      arquivo = `relatorio-${nome.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
+      const porData = {};
+      for (const r of histRegs.filter(r => r.participanteId === alvo)) (porData[r.data] ??= []).push(r);
+      const datas = [...new Set([...datasRelatorio(), ...Object.keys(porData)])].sort();
+      let pts = 0, dias = 0, seg = 0, musc = 0, cole = 0, post = 0, nada = 0, pend = 0;
+      for (const d of datas) {
+        const regsD = porData[d] || [null];
+        regsD.forEach((r, i) => {
+          const c = celulasRelatorio(r);
+          temDifere ||= !!c.difere;
+          const rot = `${diaSem(d)} ${fmtData(d).slice(0, 5)}`;
+          linhas.push([regsD.length > 1 ? { content: `${rot}\n(duplicado ${i + 1}/${regsD.length})`, styles: { textColor: VERMELHO } } : rot, ...c.cel]);
+        });
+        // totais iguais ao placar: um lançamento por dia (o de maior pontuação)
+        const validos = regsD.filter(r => r && !registroVazio(r));
+        if (validos.length) {
+          const r = validos.reduce((a, b) => ((b.pontos || 0) > (a.pontos || 0) ? b : a));
+          pts += r.pontos || 0; dias++; seg += segDe(r);
+          if (r.musculacao) musc++; if (r.atividade_coletiva) cole++; if (r.post_insta) post++;
+        } else if (regsD.some(ehNada)) nada++;
+        else pend++;
+      }
+      resumo.push(`Total: ${pts} pts   ·   ${dias} ${dias === 1 ? "dia" : "dias"} com atividade   ·   Cardio total: ${fmtHhMmSs(seg)}`);
+      resumo.push(`Musculação: ${musc}   ·   Coletivas: ${cole}   ·   Posts: ${post}   ·   Não fez nada: ${nada}   ·   Sem lançamento: ${pend}`);
+      if (Object.values(porData).some(a => a.length > 1)) resumo.push("Atenção: há dias com lançamento duplicado — corrija no histórico.");
+    }
+
+    docPdf.setFont("helvetica", "bold"); docPdf.setFontSize(15); docPdf.setTextColor(...LARANJA);
+    docPdf.text(titulo, 14, 16);
+    docPdf.setFont("helvetica", "normal"); docPdf.setFontSize(9); docPdf.setTextColor(110);
+    docPdf.text(subtitulo, 14, 22);
+
+    docPdf.autoTable({
+      startY: 27,
+      head: [[primeiraCol, "Musculação", "Cardio", "Coletiva", "Post Insta", "Total"]],
+      body: linhas,
+      theme: "grid",
+      styles: { fontSize: 8.5, cellPadding: 1.8, valign: "middle", halign: "center", lineColor: [225, 215, 205], lineWidth: 0.2 },
+      headStyles: { fillColor: LARANJA, textColor: 255, fontStyle: "bold" },
+      columnStyles: { 0: { halign: "left", fontStyle: "bold", cellWidth: 34 }, 2: { cellWidth: 52 }, 5: { cellWidth: 16 } },
+      alternateRowStyles: { fillColor: [250, 246, 242] },
+      margin: { left: 14, right: 14 },
+    });
+
+    let y = docPdf.lastAutoTable.finalY + 7;
+    docPdf.setFontSize(9.5); docPdf.setTextColor(40);
+    for (const linha of resumo) {
+      if (y > 282) { docPdf.addPage(); y = 16; }
+      docPdf.setFont("helvetica", linha.startsWith("Atenção") ? "bold" : "normal");
+      if (linha.startsWith("Atenção")) docPdf.setTextColor(...VERMELHO); else docPdf.setTextColor(40);
+      docPdf.text(linha, 14, y); y += 5.5;
+    }
+    if (temDifere) {
+      docPdf.setFont("helvetica", "italic"); docPdf.setFontSize(8); docPdf.setTextColor(110);
+      docPdf.text("* Total gravado diferente da soma pela pontuação atual do desafio (pontuação mudou depois do lançamento).", 14, y);
+    }
+
+    const nPag = docPdf.getNumberOfPages();
+    for (let i = 1; i <= nPag; i++) {
+      docPdf.setPage(i);
+      docPdf.setFont("helvetica", "normal"); docPdf.setFontSize(8); docPdf.setTextColor(150);
+      docPdf.text(`Página ${i} de ${nPag}`, 196, 290, { align: "right" });
+    }
+    docPdf.save(arquivo);
+  } catch (e) {
+    flash("Não foi possível gerar o PDF (verifique a internet) e tente de novo.", false);
+  } finally {
+    btn.disabled = false; btn.textContent = "Gerar PDF";
+  }
 }
 
 // ---- PARTICIPANTES CRUD ----
