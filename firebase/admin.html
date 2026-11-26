@@ -352,9 +352,11 @@
         <div class="rel-linha">
           <select id="rel-tipo" aria-label="Tipo de relatório">
             <option value="dia">Por dia</option>
+            <option value="periodo">Por período</option>
             <option value="part">Por participante</option>
           </select>
-          <select id="rel-alvo" aria-label="Dia ou participante"></select>
+          <select id="rel-alvo" aria-label="Dia, início do período ou participante"></select>
+          <select id="rel-ate" aria-label="Fim do período" style="display:none"></select>
           <button class="btn btn-laranja btn-sm" id="btn-gerar-pdf">Gerar PDF</button>
         </div>
       </div>
@@ -600,7 +602,7 @@ document.querySelectorAll(".tab").forEach(tab => {
 
 // ---- VERSÃO ----
 // aba aberta há tempo continua rodando o código antigo; avisa quando há versão nova publicada
-const VERSAO = "2026-11-26.3";
+const VERSAO = "2026-11-26.4";
 async function verificarVersao() {
   try {
     const txt = await (await fetch("admin.html", { cache: "no-store" })).text();
@@ -1569,11 +1571,24 @@ function datasRelatorio() {
 function preencherAlvoRelatorio() {
   const tipo = document.getElementById("rel-tipo").value;
   const sel  = document.getElementById("rel-alvo");
-  const anterior = sel.value;
+  const ate  = document.getElementById("rel-ate");
+  const anterior = sel.value, anteriorAte = ate.value;
+  const opc = (lista, prefixo) => lista.map(d => `<option value="${d}">${prefixo}${diaSem(d)} · ${fmtData(d)}</option>`).join("");
+  const existe = (s, v) => [...s.options].some(o => o.value === v);
+  ate.style.display = tipo === "periodo" ? "" : "none";
+  if (tipo === "periodo") {
+    const asc = datasRelatorio().reverse();
+    sel.innerHTML = opc(asc, "De ");
+    ate.innerHTML = opc(asc, "Até ");
+    const iniSemana = semanaDeData(hojeBR())?.inicio;
+    sel.value = existe(sel, anterior) ? anterior : (existe(sel, iniSemana) ? iniSemana : asc[0]);
+    ate.value = existe(ate, anteriorAte) ? anteriorAte : asc[asc.length - 1];
+    return;
+  }
   sel.innerHTML = tipo === "dia"
-    ? datasRelatorio().map(d => `<option value="${d}">${diaSem(d)} · ${fmtData(d)}</option>`).join("")
+    ? opc(datasRelatorio(), "")
     : listaParts().map(([id, p]) => `<option value="${id}">${esc(p.nome)}</option>`).join("");
-  if ([...sel.options].some(o => o.value === anterior)) sel.value = anterior;
+  if (existe(sel, anterior)) sel.value = anterior;
 }
 
 function carregarScript(src) {
@@ -1619,6 +1634,109 @@ function celulasRelatorio(r) {
   };
 }
 
+const COLS_ATIV = ["Musculação", "Cardio", "Coletiva", "Post Insta", "Total"];
+const ESTILO_ATIV = { 0: { halign: "left", fontStyle: "bold", cellWidth: 34 }, 2: { cellWidth: 52 }, 5: { cellWidth: 16 } };
+
+// o lançamento que conta (igual ao placar): um por pessoa/dia, o de maior pontuação
+function lancamentoValido(regs) {
+  const v = (regs || []).filter(r => r && !registroVazio(r));
+  return v.length ? v.reduce((a, b) => ((b.pontos || 0) > (a.pontos || 0) ? b : a)) : null;
+}
+function porChave(filtro, chave) {
+  const m = {};
+  for (const r of histRegs.filter(filtro)) (m[chave(r)] ??= []).push(r);
+  return m;
+}
+
+function secaoDia(data, comTitulo) {
+  const doDia = porChave(r => r.data === data, r => r.participanteId);
+  const pids = [...listaParts().map(([id]) => id), ...Object.keys(doDia).filter(id => !participantes[id])];
+  const cont = { ok: 0, nada: 0, pendente: 0, vazio: 0 };
+  const linhas = [];
+  let pts = 0, dup = 0, difere = false;
+  for (const pid of pids) {
+    const regsP = doDia[pid] || [null];
+    regsP.forEach((r, i) => {
+      const c = celulasRelatorio(r);
+      difere ||= !!c.difere;
+      linhas.push([regsP.length > 1
+        ? { content: `${nomeDe(pid)}\n(duplicado ${i + 1}/${regsP.length})`, styles: { textColor: VERMELHO } }
+        : nomeDe(pid), ...c.cel]);
+      if (i === 0) cont[c.tipo]++;
+    });
+    pts += lancamentoValido(regsP)?.pontos || 0;
+    if (regsP.length > 1) dup++;
+  }
+  const resumo = [
+    `Fizeram atividade: ${cont.ok}   ·   Não fizeram nada: ${cont.nada}   ·   Sem lançamento: ${cont.pendente}   ·   Pontos do dia: ${pts}`,
+  ];
+  if (dup) resumo.push(`Atenção: ${dup} participante(s) com lançamento duplicado neste dia — corrija no histórico.`);
+  if (cont.vazio) resumo.push(`Atenção: ${cont.vazio} lançamento(s) vazio(s) — apague no histórico.`);
+  const sem = semanaDeData(data);
+  return {
+    titulo: comTitulo ? `${diaSem(data)} ${fmtData(data)}${sem ? ` · Semana ${sem.num}` : ""}` : null,
+    head: [["Participante", ...COLS_ATIV]], linhas, colunas: ESTILO_ATIV, resumo, difere,
+  };
+}
+
+function secaoParticipante(pid, datas) {
+  const porData = porChave(r => r.participanteId === pid, r => r.data);
+  const todas = [...new Set([...datas, ...Object.keys(porData)])].sort();
+  const linhas = [];
+  let pts = 0, dias = 0, seg = 0, musc = 0, cole = 0, post = 0, nada = 0, pend = 0, difere = false;
+  for (const d of todas) {
+    const regsD = porData[d] || [null];
+    const rot = `${diaSem(d)} ${fmtData(d).slice(0, 5)}`;
+    regsD.forEach((r, i) => {
+      const c = celulasRelatorio(r);
+      difere ||= !!c.difere;
+      linhas.push([regsD.length > 1 ? { content: `${rot}\n(duplicado ${i + 1}/${regsD.length})`, styles: { textColor: VERMELHO } } : rot, ...c.cel]);
+    });
+    const r = lancamentoValido(regsD);
+    if (r) {
+      pts += r.pontos || 0; dias++; seg += segDe(r);
+      if (r.musculacao) musc++; if (r.atividade_coletiva) cole++; if (r.post_insta) post++;
+    } else if (regsD.some(ehNada)) nada++;
+    else pend++;
+  }
+  const resumo = [
+    `Total: ${pts} pts   ·   ${dias} ${dias === 1 ? "dia" : "dias"} com atividade   ·   Cardio total: ${fmtHhMmSs(seg)}`,
+    `Musculação: ${musc}   ·   Coletivas: ${cole}   ·   Posts: ${post}   ·   Não fez nada: ${nada}   ·   Sem lançamento: ${pend}`,
+  ];
+  if (Object.values(porData).some(a => a.length > 1)) resumo.push("Atenção: há dias com lançamento duplicado — corrija no histórico.");
+  return { titulo: null, head: [["Dia", ...COLS_ATIV]], linhas, colunas: ESTILO_ATIV, resumo, difere };
+}
+
+function secaoResumoPeriodo(datas) {
+  const noPeriodo = new Set(datas);
+  const porPart = porChave(r => noPeriodo.has(r.data), r => r.participanteId);
+  const pids = [...listaParts().map(([id]) => id), ...Object.keys(porPart).filter(id => !participantes[id])];
+  const tot = pids.map(pid => {
+    const porData = {};
+    for (const r of porPart[pid] || []) (porData[r.data] ??= []).push(r);
+    const t = { pid, pts: 0, dias: 0, seg: 0, musc: 0, cole: 0, post: 0, nada: 0 };
+    for (const d of datas) {
+      const r = lancamentoValido(porData[d]);
+      if (r) {
+        t.pts += r.pontos || 0; t.dias++; t.seg += segDe(r);
+        if (r.musculacao) t.musc++; if (r.atividade_coletiva) t.cole++; if (r.post_insta) t.post++;
+      } else if ((porData[d] || []).some(ehNada)) t.nada++;
+    }
+    return t;
+  }).sort((a, b) => b.pts - a.pts || b.seg - a.seg || b.dias - a.dias || nomeDe(a.pid).localeCompare(nomeDe(b.pid), "pt-BR"));
+  const linhas = tot.map((t, i) => [i + 1, nomeDe(t.pid), `${t.dias}/${datas.length}`, t.musc, fmtHhMmSs(t.seg), t.cole, t.post, t.nada,
+    { content: t.pts, styles: { fontStyle: "bold" } }]);
+  const soma = k => tot.reduce((s, t) => s + t[k], 0);
+  return {
+    titulo: "Resumo do período por participante",
+    head: [["#", "Participante", "Dias c/ ativ.", "Musculação", "Cardio total", "Coletivas", "Posts", "Não fez", "Pontos"]],
+    linhas,
+    colunas: { 0: { cellWidth: 8 }, 1: { halign: "left", fontStyle: "bold" } },
+    resumo: [`Totais do período: ${soma("pts")} pts   ·   Cardio: ${fmtHhMmSs(soma("seg"))}   ·   Musculação: ${soma("musc")}   ·   Coletivas: ${soma("cole")}   ·   Posts: ${soma("post")}`],
+    difere: false,
+  };
+}
+
 async function gerarRelatorio() {
   const btn  = document.getElementById("btn-gerar-pdf");
   const tipo = document.getElementById("rel-tipo").value;
@@ -1630,69 +1748,28 @@ async function gerarRelatorio() {
     if (!ok) throw new Error("histórico não carregou");
     const docPdf = new jsPDF({ unit: "mm", format: "a4" });
     const geradoEm = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
-    let titulo, subtitulo, primeiraCol, linhas = [], resumo = [], arquivo, temDifere = false;
+    let titulo, subtitulo, arquivo, secoes;
 
     if (tipo === "dia") {
-      const sem = semanaDeData(alvo);
       titulo    = `Relatório do dia · ${diaSem(alvo)} ${fmtData(alvo)}`;
+      const sem = semanaDeData(alvo);
       subtitulo = `${desafioAtivo.nome}${sem ? ` · Semana ${sem.num}` : ""} · gerado em ${geradoEm}`;
-      primeiraCol = "Participante";
-      arquivo = `relatorio-${alvo}.pdf`;
-      const doDia = {};
-      for (const r of histRegs.filter(r => r.data === alvo)) (doDia[r.participanteId] ??= []).push(r);
-      const pids = [...listaParts().map(([id]) => id), ...Object.keys(doDia).filter(id => !participantes[id])];
-      const cont = { ok: 0, nada: 0, pendente: 0, vazio: 0 };
-      let pts = 0, dup = 0;
-      for (const pid of pids) {
-        const regsP = doDia[pid] || [null];
-        regsP.forEach((r, i) => {
-          const c = celulasRelatorio(r);
-          temDifere ||= !!c.difere;
-          const nome = regsP.length > 1
-            ? { content: `${nomeDe(pid)}\n(duplicado ${i + 1}/${regsP.length})`, styles: { textColor: VERMELHO } }
-            : nomeDe(pid);
-          linhas.push([nome, ...c.cel]);
-          if (i === 0) cont[c.tipo]++;
-        });
-        // igual ao placar: conta um lançamento por pessoa (o de maior pontuação)
-        const validos = regsP.filter(r => r && !registroVazio(r));
-        if (validos.length) pts += Math.max(...validos.map(r => r.pontos || 0));
-        if (regsP.length > 1) dup++;
-      }
-      resumo.push(`Fizeram atividade: ${cont.ok}   ·   Não fizeram nada: ${cont.nada}   ·   Sem lançamento: ${cont.pendente}`);
-      resumo.push(`Pontos somados no dia: ${pts}${dup ? " (duplicados contados uma vez, como no placar)" : ""}`);
-      if (dup) resumo.push(`Atenção: ${dup} participante(s) com lançamento duplicado neste dia — corrija no histórico.`);
-      if (cont.vazio) resumo.push(`Atenção: ${cont.vazio} lançamento(s) vazio(s) — apague no histórico.`);
+      arquivo   = `relatorio-${alvo}.pdf`;
+      secoes    = [secaoDia(alvo, false)];
+    } else if (tipo === "periodo") {
+      let de = alvo, ate = document.getElementById("rel-ate").value;
+      if (de > ate) [de, ate] = [ate, de];
+      const datas = datasRelatorio().reverse().filter(d => d >= de && d <= ate);
+      titulo    = `Relatório do período · ${fmtData(de).slice(0, 5)} a ${fmtData(ate).slice(0, 5)}`;
+      subtitulo = `${desafioAtivo.nome} · ${datas.length} ${datas.length === 1 ? "dia" : "dias"} · gerado em ${geradoEm}`;
+      arquivo   = `relatorio-${de}-a-${ate}.pdf`;
+      secoes    = [secaoResumoPeriodo(datas), ...datas.map(d => secaoDia(d, true))];
     } else {
       const nome = nomeDe(alvo);
       titulo    = `Relatório · ${nome}`;
       subtitulo = `${desafioAtivo.nome} · ${fmtData(desafioAtivo.inicio)} a ${fmtData(desafioAtivo.fim)} · gerado em ${geradoEm}`;
-      primeiraCol = "Dia";
-      arquivo = `relatorio-${nome.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
-      const porData = {};
-      for (const r of histRegs.filter(r => r.participanteId === alvo)) (porData[r.data] ??= []).push(r);
-      const datas = [...new Set([...datasRelatorio(), ...Object.keys(porData)])].sort();
-      let pts = 0, dias = 0, seg = 0, musc = 0, cole = 0, post = 0, nada = 0, pend = 0;
-      for (const d of datas) {
-        const regsD = porData[d] || [null];
-        regsD.forEach((r, i) => {
-          const c = celulasRelatorio(r);
-          temDifere ||= !!c.difere;
-          const rot = `${diaSem(d)} ${fmtData(d).slice(0, 5)}`;
-          linhas.push([regsD.length > 1 ? { content: `${rot}\n(duplicado ${i + 1}/${regsD.length})`, styles: { textColor: VERMELHO } } : rot, ...c.cel]);
-        });
-        // totais iguais ao placar: um lançamento por dia (o de maior pontuação)
-        const validos = regsD.filter(r => r && !registroVazio(r));
-        if (validos.length) {
-          const r = validos.reduce((a, b) => ((b.pontos || 0) > (a.pontos || 0) ? b : a));
-          pts += r.pontos || 0; dias++; seg += segDe(r);
-          if (r.musculacao) musc++; if (r.atividade_coletiva) cole++; if (r.post_insta) post++;
-        } else if (regsD.some(ehNada)) nada++;
-        else pend++;
-      }
-      resumo.push(`Total: ${pts} pts   ·   ${dias} ${dias === 1 ? "dia" : "dias"} com atividade   ·   Cardio total: ${fmtHhMmSs(seg)}`);
-      resumo.push(`Musculação: ${musc}   ·   Coletivas: ${cole}   ·   Posts: ${post}   ·   Não fez nada: ${nada}   ·   Sem lançamento: ${pend}`);
-      if (Object.values(porData).some(a => a.length > 1)) resumo.push("Atenção: há dias com lançamento duplicado — corrija no histórico.");
+      arquivo   = `relatorio-${nome.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.pdf`;
+      secoes    = [secaoParticipante(alvo, datasRelatorio())];
     }
 
     docPdf.setFont("helvetica", "bold"); docPdf.setFontSize(15); docPdf.setTextColor(...LARANJA);
@@ -1700,27 +1777,38 @@ async function gerarRelatorio() {
     docPdf.setFont("helvetica", "normal"); docPdf.setFontSize(9); docPdf.setTextColor(110);
     docPdf.text(subtitulo, 14, 22);
 
-    docPdf.autoTable({
-      startY: 27,
-      head: [[primeiraCol, "Musculação", "Cardio", "Coletiva", "Post Insta", "Total"]],
-      body: linhas,
-      theme: "grid",
-      styles: { fontSize: 8.5, cellPadding: 1.8, valign: "middle", halign: "center", lineColor: [225, 215, 205], lineWidth: 0.2 },
-      headStyles: { fillColor: LARANJA, textColor: 255, fontStyle: "bold" },
-      columnStyles: { 0: { halign: "left", fontStyle: "bold", cellWidth: 34 }, 2: { cellWidth: 52 }, 5: { cellWidth: 16 } },
-      alternateRowStyles: { fillColor: [250, 246, 242] },
-      margin: { left: 14, right: 14 },
-    });
-
-    let y = docPdf.lastAutoTable.finalY + 7;
-    docPdf.setFontSize(9.5); docPdf.setTextColor(40);
-    for (const linha of resumo) {
-      if (y > 282) { docPdf.addPage(); y = 16; }
-      docPdf.setFont("helvetica", linha.startsWith("Atenção") ? "bold" : "normal");
-      if (linha.startsWith("Atenção")) docPdf.setTextColor(...VERMELHO); else docPdf.setTextColor(40);
-      docPdf.text(linha, 14, y); y += 5.5;
+    let y = 27;
+    for (const s of secoes) {
+      if (s.titulo) {
+        if (y > 235) { docPdf.addPage(); y = 16; }   // não deixa título sozinho no pé da página
+        docPdf.setFont("helvetica", "bold"); docPdf.setFontSize(11.5); docPdf.setTextColor(...LARANJA);
+        docPdf.text(s.titulo, 14, y + 4);
+        y += 7;
+      }
+      docPdf.autoTable({
+        startY: y,
+        head: s.head,
+        body: s.linhas,
+        theme: "grid",
+        styles: { fontSize: 8.5, cellPadding: 1.8, valign: "middle", halign: "center", lineColor: [225, 215, 205], lineWidth: 0.2 },
+        headStyles: { fillColor: LARANJA, textColor: 255, fontStyle: "bold" },
+        columnStyles: s.colunas,
+        alternateRowStyles: { fillColor: [250, 246, 242] },
+        margin: { left: 14, right: 14 },
+      });
+      y = docPdf.lastAutoTable.finalY + 6;
+      docPdf.setFontSize(9.5);
+      for (const linha of s.resumo) {
+        if (y > 282) { docPdf.addPage(); y = 16; }
+        const atencao = linha.startsWith("Atenção");
+        docPdf.setFont("helvetica", atencao ? "bold" : "normal");
+        if (atencao) docPdf.setTextColor(...VERMELHO); else docPdf.setTextColor(40);
+        docPdf.text(linha, 14, y); y += 5.5;
+      }
+      y += 5;
     }
-    if (temDifere) {
+    if (secoes.some(s => s.difere)) {
+      if (y > 285) { docPdf.addPage(); y = 16; }
       docPdf.setFont("helvetica", "italic"); docPdf.setFontSize(8); docPdf.setTextColor(110);
       docPdf.text("* Total gravado diferente da soma pela pontuação atual do desafio (pontuação mudou depois do lançamento).", 14, y);
     }
