@@ -897,12 +897,15 @@ function atualizarInfoSemana() {
 
 async function carregarRegistrosDoDia() {
   if (!desafioAtivo) return;
+  // limpa ANTES dos awaits para evitar que sessões do dia anterior sejam lidas pelo DOM
   sessoesCardio = {};
+  registrosDia  = {};
+  contagemSemana = {};
+  renderizarPartAtual(); // zera o formulário imediatamente
   atualizarInfoSemana();
   const data = document.getElementById("sel-data").value;
   const sem  = semanaDeData(data);
 
-  registrosDia = {};
   const snapDia = await getDocs(query(collection(db,"registros"), where("data","==",data)));
   snapDia.forEach(d => {
     const r = d.data();
@@ -912,7 +915,6 @@ async function carregarRegistrosDoDia() {
     }
   });
 
-  contagemSemana = {};
   if (sem) {
     const snapSem = await getDocs(query(collection(db,"registros"),
       where("data",">=",sem.inicio), where("data","<=",sem.fim)));
