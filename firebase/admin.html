@@ -602,7 +602,7 @@ document.querySelectorAll(".tab").forEach(tab => {
 
 // ---- VERSÃO ----
 // aba aberta há tempo continua rodando o código antigo; avisa quando há versão nova publicada
-const VERSAO = "2026-11-26.4";
+const VERSAO = "2026-11-26.5";
 async function verificarVersao() {
   try {
     const txt = await (await fetch("admin.html", { cache: "no-store" })).text();
@@ -1572,7 +1572,10 @@ function preencherAlvoRelatorio() {
   const tipo = document.getElementById("rel-tipo").value;
   const sel  = document.getElementById("rel-alvo");
   const ate  = document.getElementById("rel-ate");
-  const anterior = sel.value, anteriorAte = ate.value;
+  // só reaproveita a escolha anterior se o tipo de relatório não mudou
+  const mesmoTipo = sel.dataset.tipo === tipo;
+  const anterior = mesmoTipo ? sel.value : null, anteriorAte = mesmoTipo ? ate.value : null;
+  sel.dataset.tipo = tipo;
   const opc = (lista, prefixo) => lista.map(d => `<option value="${d}">${prefixo}${diaSem(d)} · ${fmtData(d)}</option>`).join("");
   const existe = (s, v) => [...s.options].some(o => o.value === v);
   ate.style.display = tipo === "periodo" ? "" : "none";
