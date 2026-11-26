@@ -1040,7 +1040,7 @@ function renderizarPartAtual() {
     const totalSeg = sessoesParaSegundos(pid);
     const rows = sessoes.map((s, i) => `
       <div class="sessao-row" data-idx="${i}" style="display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem">
-        <input type="number" class="sc-h" min="0" max="23" value="${s.h||0}" style="width:3rem;padding:.25rem .3rem">
+        <input type="number" class="sc-h" min="0" max="23" value="${Math.min(s.h||0,23)}" style="width:3rem;padding:.25rem .3rem" title="máx 23h">
         <span>h</span>
         <input type="number" class="sc-m" min="0" max="59" value="${s.m||0}" style="width:3rem;padding:.25rem .3rem">
         <span>m</span>
@@ -1113,11 +1113,10 @@ function lerSessoesDoDOM(pid) {
   const campos = document.getElementById("reg-part-campos");
   sessoesCardio[pid] = [];
   campos.querySelectorAll(".sessao-row").forEach(row => {
-    sessoesCardio[pid].push({
-      h: parseInt(row.querySelector(".sc-h")?.value)||0,
-      m: parseInt(row.querySelector(".sc-m")?.value)||0,
-      s: parseInt(row.querySelector(".sc-s")?.value)||0,
-    });
+    const h = Math.min(parseInt(row.querySelector(".sc-h")?.value)||0, 23);
+    const m = Math.min(parseInt(row.querySelector(".sc-m")?.value)||0, 59);
+    const s = Math.min(parseInt(row.querySelector(".sc-s")?.value)||0, 59);
+    sessoesCardio[pid].push({ h, m, s });
   });
 }
 
@@ -1182,6 +1181,23 @@ async function salvarParticipanteAuto(pid, getVals) {
   const existente = registrosDia[pid];
   const valsAntigos = existente ? { ...existente } : { musculacao:false, atividade_coletiva:false, post_insta:false, cardio_segundos:0 };
   const vals = getVals();
+
+  // validação: sessão de cardio com horas absurdas (> 23h)
+  if (sessoesCardio[pid]) {
+    for (const s of sessoesCardio[pid]) {
+      if ((parseInt(s.h)||0) > 23) {
+        flash(`⚠️ Cardio inválido: ${s.h}h não é possível. Corrija antes de salvar.`, false);
+        renderizarPartAtual();
+        return;
+      }
+    }
+  }
+
+  // não criar registro vazio (sem nenhuma atividade)
+  const temAtividade = vals.musculacao || vals.cardio_segundos > 0 || vals.post_insta || vals.atividade_coletiva;
+  if (!existente && !temAtividade) {
+    return; // nada a salvar
+  }
 
   if (!existente) {
     const lMusc = getLim("musculacao", data), lCard = getLim("cardio", data);
